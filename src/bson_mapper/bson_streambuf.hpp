@@ -10,9 +10,8 @@
 * and inserts a document into the given collection when
 * all bytes are sent over.
 */
-class bson_output_streambuf : public std::streambuf
-{
-public:
+class bson_output_streambuf : public std::streambuf {
+   public:
     /**
     * Constructs a new BSON Output Streambuffer
     * that inserts documents into the given collection.
@@ -37,8 +36,7 @@ public:
     */
     virtual int underflow();
 
-private:
-
+   private:
     /**
     * Insert a byte of BSON data into the buffer.
     * The first four bytes are stored in an int, and determine the document size.
@@ -54,7 +52,6 @@ private:
     uint8_t *data;
     size_t len;
     size_t bytes_read;
-
 };
 
 // _bson_streambuf_hpp
