@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _bson_streambuf_hpp
-#define _bson_streambuf_hpp
+#pragma once
 
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/json.hpp>
 #include <mongocxx/collection.hpp>
+
+#include <bson_mapper/config/prelude.hpp>
+
+namespace bson_mapper {
+BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
 /**
 * A streambuffer that accepts bytes of BSON data,
@@ -68,5 +72,7 @@ class bson_output_streambuf : public std::streambuf {
     size_t bytes_read;
 };
 
-// _bson_streambuf_hpp
-#endif
+BSON_MAPPER_INLINE_NAMESPACE_END
+}  // namespace bson_mapper
+
+#include <bson_mapper/config/postlude.hpp>

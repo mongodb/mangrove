@@ -22,6 +22,11 @@
 
 #include "bson_streambuf.hpp"
 
+#include <bson_mapper/config/prelude.hpp>
+
+namespace bson_mapper {
+BSON_MAPPER_INLINE_NAMESPACE_BEGIN
+
 bson_output_streambuf::bson_output_streambuf(mongocxx::collection *coll) {
     this->coll = coll;
 }
@@ -74,3 +79,8 @@ int bson_output_streambuf::insert(int ch) {
     }
     return ch;
 }
+
+BSON_MAPPER_INLINE_NAMESPACE_END
+}  // namespace bson_mapper
+
+#include <bson_mapper/config/postlude.hpp>
