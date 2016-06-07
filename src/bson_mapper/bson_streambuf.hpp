@@ -37,8 +37,6 @@ class bson_output_streambuf : public std::streambuf {
     */
     bson_output_streambuf(mongocxx::collection coll);
 
-    ~bson_output_streambuf();
-
     /**
     * This function is called when writing to the stream and the buffer is full.
     * Since we don't define a buffer, this is called with every character.
@@ -67,7 +65,7 @@ class bson_output_streambuf : public std::streambuf {
     */
     int insert(int ch);
     mongocxx::collection coll;
-    uint8_t *data;
+    std::unique_ptr<uint8_t[]> data;
     size_t len;
     size_t bytes_read;
 };

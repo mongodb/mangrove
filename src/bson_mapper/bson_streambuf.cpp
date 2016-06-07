@@ -29,12 +29,6 @@ BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 bson_output_streambuf::bson_output_streambuf(mongocxx::collection coll) : coll(coll) {
 }
 
-bson_output_streambuf::~bson_output_streambuf() {
-    if (data != nullptr) {
-        delete[] data;
-    }
-}
-
 int bson_output_streambuf::underflow() {
     return EOF;
 }
@@ -61,8 +55,8 @@ int bson_output_streambuf::insert(int ch) {
         if (len > BSON_MAX_SIZE) {
             throw std::invalid_argument("BSON document length is too large.");
         }
-        data = new uint8_t[len];
-        std::memcpy(data, &len, 4);
+        data = std::unique_ptr<uint8_t[]>(new uint8_t[len]);
+        std::memcpy(data.get(), &len, 4);
     }
 
     if (bytes_read > 4) {
@@ -71,10 +65,8 @@ int bson_output_streambuf::insert(int ch) {
 
     if (bytes_read == len) {
         // This inserts the document into the collection, and resets the data and length variables.
-        bsoncxx::document::view v(data, len);
+        bsoncxx::document::view v(data.get(), len);
         coll.insert_one(v);
-        delete[] data;
-        data = nullptr;
         bytes_read = 0;
         len = 0;
     } else if (bytes_read > len && len >= 4) {
