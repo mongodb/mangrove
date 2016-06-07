@@ -28,7 +28,7 @@ BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 * and inserts a document into the given collection when
 * all bytes are sent over.
 */
-class bson_output_streambuf : public std::streambuf {
+class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
    public:
     /**
     * Constructs a new BSON Output Streambuffer
