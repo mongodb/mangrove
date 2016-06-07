@@ -26,7 +26,8 @@
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
-bson_output_streambuf::bson_output_streambuf(mongocxx::collection coll) : coll(coll) {
+bson_output_streambuf::bson_output_streambuf(mongocxx::collection coll)
+    : coll(coll), data(nullptr, [](uint8_t *p) {}) {
 }
 
 int bson_output_streambuf::underflow() {
@@ -55,12 +56,13 @@ int bson_output_streambuf::insert(int ch) {
         if (len > BSON_MAX_SIZE) {
             throw std::invalid_argument("BSON document length is too large.");
         }
-        data = std::unique_ptr<uint8_t[]>(new uint8_t[len]);
+        data = std::unique_ptr<uint8_t, void (*)(std::uint8_t *)>(new uint8_t[len],
+                                                                  [](uint8_t *p) { delete[] p; });
         std::memcpy(data.get(), &len, 4);
     }
 
     if (bytes_read > 4) {
-        data[bytes_read - 1] = static_cast<uint8_t>(ch);
+        data.get()[bytes_read - 1] = static_cast<uint8_t>(ch);
     }
 
     if (bytes_read == len) {

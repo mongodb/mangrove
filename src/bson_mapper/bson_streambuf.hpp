@@ -63,9 +63,9 @@ class bson_output_streambuf : public std::streambuf {
     * @param  ch The byte to insert.
     * @return    The byte inserted, or EOF if something failed.
     */
-    int insert(int ch);
+    BSON_MAPPER_PRIVATE int insert(int ch);
     mongocxx::collection coll;
-    std::unique_ptr<uint8_t[]> data;
+    std::unique_ptr<uint8_t, void (*)(std::uint8_t*)> data;
     size_t len;
     size_t bytes_read;
 };
