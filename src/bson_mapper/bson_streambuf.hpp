@@ -35,7 +35,7 @@ class bson_output_streambuf : public std::streambuf {
     * that inserts documents into the given collection.
     * @param coll A pointer to a MongoDB collection.
     */
-    bson_output_streambuf(mongocxx::collection *coll);
+    bson_output_streambuf(mongocxx::collection coll);
 
     ~bson_output_streambuf();
 
@@ -45,18 +45,18 @@ class bson_output_streambuf : public std::streambuf {
     * @param  ch The byte of BSON to insert.
     * @return    The inserted byte, or EOF if something failed.
     */
-    virtual int overflow(int ch);
+    int overflow(int ch) override;
 
     /**
     * This function always returns EOF,
     * since one should not write from an output stream.
     * @return EOF
     */
-    virtual int underflow();
+    virtual int underflow() override;
 
    private:
     /**
-    * Insert a byte of BSON data into the buffer.
+    * This function inserts a byte of BSON data into the buffer.
     * The first four bytes are stored in an int, and determine the document size.
     * Then, that number of bytes (minus the first 4) are stored in the buffer.
     * When the data is complete a BSON document view is created, and inserted into
@@ -66,7 +66,7 @@ class bson_output_streambuf : public std::streambuf {
     * @return    The byte inserted, or EOF if something failed.
     */
     int insert(int ch);
-    mongocxx::collection *coll;
+    mongocxx::collection coll;
     uint8_t *data;
     size_t len;
     size_t bytes_read;

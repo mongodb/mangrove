@@ -15,11 +15,10 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <stdexcept>
 #include <streambuf>
 
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
-
+#include <bson.h>
 #include "bson_streambuf.hpp"
 
 #include <bson_mapper/config/prelude.hpp>
@@ -27,8 +26,7 @@
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
-bson_output_streambuf::bson_output_streambuf(mongocxx::collection *coll) {
-    this->coll = coll;
+bson_output_streambuf::bson_output_streambuf(mongocxx::collection coll) : coll(coll) {
 }
 
 bson_output_streambuf::~bson_output_streambuf() {
@@ -43,7 +41,10 @@ int bson_output_streambuf::underflow() {
 
 int bson_output_streambuf::overflow(int ch) {
     int result = EOF;
-    assert(ch >= 0 && ch <= UCHAR_MAX);
+    if (ch < 0 || ch > std::numeric_limits<uint8_t>::max()) {
+        throw std::invalid_argument("Character is out of bounds.");
+    }
+    assert(ch >= 0 && ch <= std::numeric_limits<uint8_t>::max());
     result = insert(ch);
     return result;
 }
@@ -51,25 +52,27 @@ int bson_output_streambuf::overflow(int ch) {
 int bson_output_streambuf::insert(int ch) {
     bytes_read++;
 
-    // for first four bytes, build int32 that contains document size
+    // For the first four bytes, this builds int32 that contains the document size.
     if (bytes_read <= 4) {
-        len += (ch << (8 * (bytes_read - 1)));
+        len |= (ch << (8 * (bytes_read - 1)));
     }
-    // once doc size is received, allocate space.
+    // Once the document size is received, allocate space.
     if (bytes_read == 4) {
-        // TODO perhaps fail unless 0 < len <= MAX_BSON_SIZE?
+        if (len > BSON_MAX_SIZE) {
+            throw std::invalid_argument("BSON document length is too large.");
+        }
         data = new uint8_t[len];
-        *(size_t *)data = len;
+        std::memcpy(data, &len, 4);
     }
 
     if (bytes_read > 4) {
-        data[bytes_read - 1] = (uint8_t)ch;
+        data[bytes_read - 1] = static_cast<uint8_t>(ch);
     }
 
     if (bytes_read == len) {
-        // insert document, reset data and length
+        // This inserts the document into the collection, and resets the data and length variables.
         bsoncxx::document::view v(data, len);
-        coll->insert_one(v);
+        coll.insert_one(v);
         delete[] data;
         data = nullptr;
         bytes_read = 0;
