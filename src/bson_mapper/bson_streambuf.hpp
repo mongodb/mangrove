@@ -23,8 +23,6 @@
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
-using document_callback = std::function<void(bsoncxx::document::value)>;
-
 /**
 * A streambuffer that accepts bytes of BSON data,
 * and passes a document into the user-provided callback when
@@ -32,6 +30,8 @@ using document_callback = std::function<void(bsoncxx::document::value)>;
 */
 class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
    public:
+    using document_callback = std::function<void(bsoncxx::document::value)>;
+
     /**
     * Constructs a new BSON Output Streambuffer
     * that inserts documents into the given collection.
@@ -67,10 +67,10 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     */
     BSON_MAPPER_PRIVATE int insert(int ch);
     // This accepts a document::value and returns void.
-    document_callback cb;
-    std::unique_ptr<uint8_t, void (*)(std::uint8_t*)> data;
-    size_t len = 0;
-    size_t bytes_read = 0;
+    document_callback _cb;
+    std::unique_ptr<uint8_t, void (*)(std::uint8_t*)> _data;
+    size_t _len = 0;
+    size_t _bytes_read = 0;
 };
 
 BSON_MAPPER_INLINE_NAMESPACE_END

@@ -27,7 +27,7 @@ namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
 bson_output_streambuf::bson_output_streambuf(document_callback cb)
-    : cb(cb), data(nullptr, [](uint8_t *p) {}), bytes_read(0), len(0) {
+    : _cb(cb), _data(nullptr, [](uint8_t *p) {}), _bytes_read(0), _len(0) {
 }
 
 int bson_output_streambuf::underflow() {
@@ -45,33 +45,32 @@ int bson_output_streambuf::overflow(int ch) {
 }
 
 int bson_output_streambuf::insert(int ch) {
-    bytes_read++;
+    _bytes_read++;
 
     // For the first four bytes, this builds int32 that contains the document size.
-    if (bytes_read <= 4) {
-        len |= (ch << (8 * (bytes_read - 1)));
+    if (_bytes_read <= 4) {
+        _len |= (ch << (8 * (_bytes_read - 1)));
     }
     // Once the document size is received, allocate space.
-    if (bytes_read == 4) {
-        if (len > BSON_MAX_SIZE) {
+    if (_bytes_read == 4) {
+        if (_len > BSON_MAX_SIZE) {
             throw std::invalid_argument("BSON document length is too large.");
         }
-        data = std::unique_ptr<uint8_t, void (*)(std::uint8_t *)>(new uint8_t[len],
-                                                                  [](uint8_t *p) { delete[] p; });
-        std::memcpy(data.get(), &len, 4);
+        _data = std::unique_ptr<uint8_t, void (*)(std::uint8_t *)>(new uint8_t[_len],
+                                                                   [](uint8_t *p) { delete[] p; });
+        std::memcpy(_data.get(), &_len, 4);
     }
 
-    if (bytes_read > 4) {
-        data.get()[bytes_read - 1] = static_cast<uint8_t>(ch);
+    if (_bytes_read > 4) {
+        _data.get()[_bytes_read - 1] = static_cast<uint8_t>(ch);
     }
 
     // This creates the document from the given bytes, and calls the user-provided callback.
-    if (bytes_read == len) {
-        bsoncxx::document::value v(std::move(data), len);
-        this->cb(v);
-        bytes_read = 0;
-        len = 0;
-    } else if (bytes_read > len && len >= 4) {
+    if (_bytes_read == _len) {
+        _cb({std::move(_data), _len});
+        _bytes_read = 0;
+        _len = 0;
+    } else if (_bytes_read > _len && _len >= 4) {
         return EOF;
     }
     return ch;
@@ -79,5 +78,3 @@ int bson_output_streambuf::insert(int ch) {
 
 BSON_MAPPER_INLINE_NAMESPACE_END
 }  // namespace bson_mapper
-
-#include <bson_mapper/config/postlude.hpp>
