@@ -23,9 +23,11 @@
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
+using document_callback = std::function<void(bsoncxx::document::value)>;
+
 /**
 * A streambuffer that accepts bytes of BSON data,
-* and inserts a document into the given collection when
+* and passes a document into the user-provided callback when
 * all bytes are sent over.
 */
 class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
@@ -35,7 +37,7 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     * that inserts documents into the given collection.
     * @param coll A pointer to a MongoDB collection.
     */
-    bson_output_streambuf(mongocxx::collection coll);
+    bson_output_streambuf(document_callback cb);
 
     /**
     * This function is called when writing to the stream and the buffer is full.
@@ -57,17 +59,18 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     * This function inserts a byte of BSON data into the buffer.
     * The first four bytes are stored in an int, and determine the document size.
     * Then, that number of bytes (minus the first 4) are stored in the buffer.
-    * When the data is complete a BSON document view is created, and inserted into
-    * the collection.
+    * When the data is complete a BSON document value is created, and passed to the user-provided
+    * callback.
     *
     * @param  ch The byte to insert.
     * @return    The byte inserted, or EOF if something failed.
     */
     BSON_MAPPER_PRIVATE int insert(int ch);
-    mongocxx::collection coll;
+    // This accepts a document::value and returns void.
+    document_callback cb;
     std::unique_ptr<uint8_t, void (*)(std::uint8_t*)> data;
-    size_t len;
-    size_t bytes_read;
+    size_t len = 0;
+    size_t bytes_read = 0;
 };
 
 BSON_MAPPER_INLINE_NAMESPACE_END

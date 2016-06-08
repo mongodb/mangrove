@@ -9,3 +9,6 @@
 
 # OSX
 .DS_Store
+
+# Editor-specific settings
+.clang_complete

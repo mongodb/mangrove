@@ -26,8 +26,8 @@
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
-bson_output_streambuf::bson_output_streambuf(mongocxx::collection coll)
-    : coll(coll), data(nullptr, [](uint8_t *p) {}) {
+bson_output_streambuf::bson_output_streambuf(document_callback cb)
+    : cb(cb), data(nullptr, [](uint8_t *p) {}), bytes_read(0), len(0) {
 }
 
 int bson_output_streambuf::underflow() {
@@ -65,10 +65,10 @@ int bson_output_streambuf::insert(int ch) {
         data.get()[bytes_read - 1] = static_cast<uint8_t>(ch);
     }
 
+    // This creates the document from the given bytes, and calls the user-provided callback.
     if (bytes_read == len) {
-        // This inserts the document into the collection, and resets the data and length variables.
-        bsoncxx::document::view v(data.get(), len);
-        coll.insert_one(v);
+        bsoncxx::document::value v(std::move(data), len);
+        this->cb(v);
         bytes_read = 0;
         len = 0;
     } else if (bytes_read > len && len >= 4) {
