@@ -14,20 +14,27 @@
 
 #pragma once
 
+#include <bson_mapper/config/prelude.hpp>
+
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <stdexcept>
+#include <streambuf>
+
+#include <bson.h>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/json.hpp>
-#include <mongocxx/collection.hpp>
-
-#include <bson_mapper/config/prelude.hpp>
 
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
 /**
-* A streambuffer that accepts bytes of BSON data,
-* and passes a document into the user-provided callback when
-* all bytes are sent over.
-*/
+ * A streambuffer that accepts one or more BSON documents as bytes of BSON data. When a doument is
+ * complete, it is passed into the user-provided callback.
+ * NOTE: This does not perform any validation on the BSON files,
+ * and simply uses their first four bytes to judge the document length.
+ */
 class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
    public:
     using document_callback = std::function<void(bsoncxx::document::value)>;
