@@ -14,12 +14,17 @@
 
 #pragma once
 
+#include <bson_mapper/config/prelude.hpp>
+
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <stdexcept>
+#include <streambuf>
+
+#include <bson.h>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/json.hpp>
-
-#include <mongocxx/collection.hpp>
-
-#include <bson_mapper/config/prelude.hpp>
 
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN

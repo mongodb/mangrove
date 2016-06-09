@@ -12,16 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cassert>
-#include <cstdio>
-#include <iostream>
-#include <stdexcept>
-#include <streambuf>
-
-#include <bson.h>
-#include "bson_streambuf.hpp"
-
 #include <bson_mapper/config/prelude.hpp>
+
+#include "bson_streambuf.hpp"
 
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN

@@ -18,6 +18,18 @@ set(LIBBSONCXX_REQUIRED_VERSION 3.0.1)
 set(LIBBSONCXX_REQUIRED_ABI_VERSION v_noabi)
 find_package(libbsoncxx ${LIBBSONCXX_REQUIRED_VERSION} REQUIRED)
 
+set(LIBMONGOCXX_REQUIRED_VERSION 3.0.1)
+set(LIBMONGOCXX_REQUIRED_ABI_VERSION v_noabi)
+find_package(libmongocxx ${LIBMONGOCXX_REQUIRED_VERSION} REQUIRED)
+
+set(LIBBSON_REQUIRED_VERSION 1.3.4)
+set(LIBBSON_REQUIRED_ABI_VERSION 1.0)
+find_package(LibBSON ${LIBBSON_REQUIRED_VERSION} REQUIRED)
+
+set(LIBMONGOC_REQUIRED_VERSION 1.3.4)
+set(LIBMONGOC_REQUIRED_ABI_VERSION 1.0)
+find_package(LibMongoC ${LIBMONGOC_REQUIRED_VERSION} REQUIRED)
+
 # Update these as needed.
 # TODO: read from file
 set(BSON_MAPPER_VERSION_MAJOR 0)
@@ -39,12 +51,18 @@ set(bson_mapper_sources
 
 include_directories(
     ${LIBBSONCXX_INCLUDE_DIRS}
+    ${LIBMONGOCXX_INCLUDE_DIRS}
+    ${LIBBSON_INCLUDE_DIRS}
+    ${LIBMONGOC_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_BINARY_DIR}/src
 )
 
 link_directories(
     ${LIBBSONCXX_LIBRARY_DIRS}
+    ${LIBMONGOCXX_LIBRARY_DIRS}
+    ${LIBBSON_LIBRARY_DIRS}
+    ${LIBMONGOC_LIBRARY_DIRS}
 )
 
 add_library(bson_mapper_static STATIC
@@ -86,7 +104,7 @@ generate_export_header (bson_mapper
     STATIC_DEFINE BSON_MAPPER_STATIC
 )
 
-set(bson_mapper_libs ${LIBBSONCXX_LIBRARIES})
+set(bson_mapper_libs ${LIBBSONCXX_LIBRARIES} ${LIBMONGOCXX_LIBRARIES} ${LIBMONGOC_LIBRARIES} ${LIBBSON_LIBRARIES})
 
 target_link_libraries(bson_mapper_static ${bson_mapper_libs})
 target_link_libraries(bson_mapper PRIVATE ${bson_mapper_libs})
