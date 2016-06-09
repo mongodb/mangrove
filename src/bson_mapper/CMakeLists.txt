@@ -33,6 +33,7 @@ set(BSON_MAPPER_HEADER_INSTALL_DIR "include/bson_mapper/${BSON_MAPPER_INLINE_NAM
 add_subdirectory(config)
 
 set(bson_mapper_sources
+   "bson_streambuf.cpp"
    "file.cpp"
 )
 
