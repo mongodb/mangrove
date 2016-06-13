@@ -115,7 +115,7 @@ TEST_CASE("bson_input_streambuf can faithfully send over the bytes of a BSON doc
 
     // read bytes of BSON document
     uint8_t *new_data = new uint8_t[len];
-    bis.read((char *)new_data, len);
+    bis.read(reinterpret_cast<char *>(new_data), len);
     auto new_doc_view = bsoncxx::document::view(new_data, len);
     REQUIRE(bson_view == new_doc_view);
     // read one more byte, should reach EOF

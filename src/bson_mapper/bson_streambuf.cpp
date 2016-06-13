@@ -106,7 +106,7 @@ int char_array_streambuf::pbackfail(int ch) {
 }
 
 std::streamsize char_array_streambuf::showmanyc() {
-    return _end - _current;
+    return std::distance(_current, _end);
 }
 
 std::streampos char_array_streambuf::seekpos(std::streampos sp, std::ios_base::openmode which) {
@@ -139,7 +139,7 @@ std::streampos char_array_streambuf::seekoff(std::streamoff off, std::ios_base::
 }
 
 bson_input_streambuf::bson_input_streambuf(const bsoncxx::document::view &v)
-    : char_array_streambuf((const char *)v.data(), v.length()) {
+    : char_array_streambuf(reinterpret_cast<const char *>(v.data()), v.length()) {
 }
 
 BSON_MAPPER_INLINE_NAMESPACE_END
