@@ -27,7 +27,7 @@
 namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
-bson_output_streambuf::bson_output_streambuf(document_callback *cb)
+bson_output_streambuf::bson_output_streambuf(document_callback cb)
     : _cb(cb), _data(nullptr, [](uint8_t *p) {}), _bytes_read(0), _len(0) {
 }
 
@@ -68,7 +68,7 @@ int bson_output_streambuf::insert(int ch) {
 
     // This creates the document from the given bytes, and calls the user-provided callback.
     if (_bytes_read == _len) {
-        (*_cb)({std::move(_data), _len});
+        _cb({std::move(_data), _len});
         _bytes_read = 0;
         _len = 0;
     } else if (_bytes_read > _len && _len >= 4) {

@@ -35,10 +35,9 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     /**
     * Constructs a new BSON Output Streambuffer
     * that passes documents to the given callback function.
-    * @param cb A pointer to function that takes a document::value and returns void.
-    * The caller must manage the lifetime of the pointer.
+    * @param cb A function that takes a document::value and returns void.
     */
-    bson_output_streambuf(document_callback *cb);
+    bson_output_streambuf(document_callback cb);
 
     /**
     * This function is called when writing to the stream and the buffer is full.
@@ -71,8 +70,8 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     * @return    The byte inserted, or EOF if something failed.
     */
     BSON_MAPPER_PRIVATE int insert(int ch);
-    // A pointer to a callback that accepts a document::value and returns void.
-    document_callback *_cb;
+    // A callback that accepts a document::value and returns void.
+    document_callback _cb;
     std::unique_ptr<uint8_t, void (*)(std::uint8_t *)> _data;
     size_t _len = 0;
     size_t _bytes_read = 0;

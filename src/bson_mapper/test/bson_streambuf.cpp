@@ -29,7 +29,7 @@ using document_callback = std::function<void(bsoncxx::document::value)>;
  */
 class doc_validator_callback {
    public:
-    doc_validator_callback(bsoncxx::document::value doc) : _doc(doc), _count(0) {
+    doc_validator_callback(bsoncxx::document::value doc) : _doc(doc) {
     }
 
     // Getter for the number of document compared so far.
@@ -47,9 +47,12 @@ class doc_validator_callback {
 
    private:
     // Keeps track of the number of documents compared by this validator.
-    int _count;
+    static int _count;
     bsoncxx::document::value _doc;
 };
+
+// initialize counter to 0
+int doc_validator_callback::_count = 0;
 
 TEST_CASE("bson_streambuf can faithfully transfer a document",
           "[bson_mapper::bson_output_streambuf]") {
@@ -64,7 +67,7 @@ TEST_CASE("bson_streambuf can faithfully transfer a document",
     auto cb = document_callback(doc_validator_callback(bson_obj));
 
     // set up stream
-    bson_output_streambuf b_buff(&cb);
+    bson_output_streambuf b_buff(cb);
     std::ostream doc_stream(&b_buff);
 
     // write document to stream
