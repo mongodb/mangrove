@@ -21,18 +21,18 @@
 #include <iostream>
 
 using namespace bson_mapper;
-using document_callback = std::function<void(bsoncxx::document::value)>;
+using document_callback = bson_output_streambuf::document_callback;
 
 /**
- * A callable object that compares a given BSON document to an original reference.
+ * An object that compares a given BSON document to an original reference.
  * This is used for unit testing.
  */
-class doc_validator_callback {
+class doc_validator {
    public:
-    doc_validator_callback(bsoncxx::document::value doc) : _doc(doc) {
+    doc_validator(bsoncxx::document::value doc) : _doc(doc), _count(0) {
     }
 
-    // Getter for the number of document compared so far.
+    // Getter for the number of documents compared so far.
     int count() {
         return _count;
     }
@@ -40,19 +40,16 @@ class doc_validator_callback {
     /**
      * This asserts that the given document is the same as the reference document.
      */
-    void operator()(bsoncxx::document::value v) {
+    void check(bsoncxx::document::value v) {
         _count++;
         REQUIRE(v.view() == _doc.view());
     }
 
    private:
     // Keeps track of the number of documents compared by this validator.
-    static int _count;
+    int _count;
     bsoncxx::document::value _doc;
 };
-
-// initialize counter to 0
-int doc_validator_callback::_count = 0;
 
 TEST_CASE("bson_streambuf can faithfully transfer a document",
           "[bson_mapper::bson_output_streambuf]") {
@@ -63,16 +60,16 @@ TEST_CASE("bson_streambuf can faithfully transfer a document",
     const uint8_t *data = bson_view.data();
     int len = bson_view.length();
 
-    // set up callback
-    auto cb = document_callback(doc_validator_callback(bson_obj));
+    // set up document validator
+    doc_validator validator = doc_validator(bson_obj);
 
-    // set up stream
-    bson_output_streambuf b_buff(cb);
+    // set up stream. The callback passes created documents into the validator object.
+    bson_output_streambuf b_buff([&validator](bsoncxx::document::value v) { validator.check(v); });
     std::ostream doc_stream(&b_buff);
 
     // write document to stream
     doc_stream.write(reinterpret_cast<const char *>(data), len);
     // write document second time
     doc_stream.write(reinterpret_cast<const char *>(data), len);
-    REQUIRE(cb.target<doc_validator_callback>()->count() == 2);
+    REQUIRE(validator.count() == 2);
 }

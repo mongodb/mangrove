@@ -23,7 +23,7 @@ namespace bson_mapper {
 BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
 /**
- * A streambuffer that accepts one or more BSON documents as bytes of BSON data. When a doument is
+ * A streambuffer that accepts one or more BSON documents as bytes of BSON data. When a document is
  * complete, it is passed into the user-provided callback.
  * NOTE: This does not perform any validation on the BSON files,
  * and simply uses their first four bytes to judge the document length.
@@ -53,10 +53,6 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     * @return EOF
     */
     virtual int underflow() override;
-
-    // document_callback *callback() {
-    //     return &_cb;
-    // }
 
    private:
     /**
