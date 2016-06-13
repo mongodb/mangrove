@@ -119,7 +119,7 @@ std::streampos char_array_streambuf::seekpos(std::streampos sp, std::ios_base::o
 
 std::streampos char_array_streambuf::seekoff(std::streamoff off, std::ios_base::seekdir way,
                                              std::ios_base::openmode which) {
-    // offset is relative to either the beginning, current, or end pointers.
+    // Offset is relative to either the beginning, current, or end pointers.
     if (which & std::ios_base::in) {
         switch (way) {
             case std::ios_base::beg:
@@ -133,7 +133,7 @@ std::streampos char_array_streambuf::seekoff(std::streamoff off, std::ios_base::
                 break;
         }
     }
-    // clamp current pointer to be within the buffer.
+    // Clamp current pointer to be within the buffer.
     _current = std::max(std::min(_current, _end), _begin);
     return std::distance(_begin, _current);
 }
