@@ -97,7 +97,7 @@ int char_array_streambuf::uflow() {
 
 int char_array_streambuf::pbackfail(int ch) {
     // We can't put back a character if the current pointer is all the way at the beginning,
-    // or if the given character does not match
+    // or if the given character does not match.
     if (_current == _begin || (ch != EOF && ch != _current[-1])) {
         return EOF;
     }
@@ -111,9 +111,9 @@ std::streamsize char_array_streambuf::showmanyc() {
 
 std::streampos char_array_streambuf::seekpos(std::streampos sp, std::ios_base::openmode which) {
     if (which & std::ios_base::in) {
+        // Clamp current pointer to be within the buffer.
         _current = std::max(std::min(_begin + sp, _end), _begin);
     }
-    // clamp current pointer to be within the buffer.
     return std::distance(_current, _end);
 }
 
