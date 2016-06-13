@@ -73,6 +73,103 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     size_t _bytes_read = 0;
 };
 
+/**
+ * An ostream that writes bytes of BSON documents into a collection.
+ * The stream owns its own bson_output_streambuf object, making creation and management of such
+ * streams easier.
+ */
+class BSON_MAPPER_API bson_ostream : public std::ostream {
+   public:
+    bson_ostream(bson_output_streambuf::document_callback cb) : std::ostream(0), bs_buf(cb) {
+        this->rdbuf(&bs_buf);
+    }
+
+   private:
+    // TODO somehow set rdbuf(*sb) to private so people can't change the streambuffer?
+    bson_output_streambuf bs_buf;
+};
+
+/**
+ * An input streambuf that uses an existing byte array as a buffer.
+ */
+class BSON_MAPPER_API char_array_streambuf : public std::streambuf {
+   public:
+    /**
+     * Create a streambuf around the given byte array.
+     * The caller is responsible for maintaining the lifetime of the underlying data.
+     * @param data  A pointer to the data to be read
+     * @param len   The length of the data
+     */
+    char_array_streambuf(const char *data, size_t len);
+
+   private:
+    /**
+     * This reads and returns a character from the buffer, and increments the read pointer.
+     * @return [description]
+     */
+    virtual BSON_MAPPER_PRIVATE int underflow() override;
+
+    // These are necessary since the buffer is not writeable, and thus we cannot call setg()
+    virtual BSON_MAPPER_PRIVATE int uflow() override;
+    virtual BSON_MAPPER_PRIVATE int pbackfail(int ch) override;
+    virtual BSON_MAPPER_PRIVATE std::streamsize showmanyc() override;
+
+    /**
+     * This function seeks to an absolute position in the buffer.
+     * @param  sp    The absolute position in the buffer
+     * @param  which Which character sequence to write to. In this case, we only care about "in",
+     * the input character sequence.
+     * @return       The absolute (relative to start) position of the current pointer.
+     */
+    virtual BSON_MAPPER_PRIVATE std::streampos seekpos(
+        std::streampos sp,
+        std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) override;
+
+    /**
+     * This function seeks to a relative position in the buffer, based on an offset.
+     * @param  off   The relative offset to seek to.
+     * @param  way   Whether the offset is relative to the beginning, current pointer, or end of the
+     * buffer.
+     * @param  which Which character sequence to write to. In this case, we only care about "in",
+     * the input character sequence.
+     * @return       The absolute (relative to start) position of the current pointer.
+     */
+    virtual BSON_MAPPER_PRIVATE std::streampos seekoff(
+        std::streamoff off, std::ios_base::seekdir way,
+        std::ios_base::openmode which = std::ios_base::in | std::ios_base::out) override;
+    // Pointers to the data buffer.
+    const char *const _begin;
+    const char *const _end;
+    const char *_current;
+};
+
+/**
+ * A wrapper from char_array_streambuf, that uses the data from a BSON document view as a buffer.
+ */
+class BSON_MAPPER_API bson_input_streambuf : public char_array_streambuf {
+   public:
+    bson_input_streambuf(const bsoncxx::document::view &v);
+};
+
+/**
+ * An istream that uses a BSON document as a buffer.
+ * While objects of this class do not own the underlying buffer,
+ * they do own the streambuf object associated with it.
+ *
+ * By default, istream objects do not delete their streambuffers when they are destroyed,
+ * so this class allows one to create a stream without dealing with the underlying streambuf object.
+ */
+class BSON_MAPPER_API bson_istream : public std::istream {
+   public:
+    bson_istream(const bsoncxx::document::view &v) : std::istream(0), bs_buf(v) {
+        this->rdbuf(&bs_buf);
+    }
+
+   private:
+    // TODO somehow set rdbuf(*sb) to private so people can't change the streambuffer?
+    bson_input_streambuf bs_buf;
+};
+
 BSON_MAPPER_INLINE_NAMESPACE_END
 }  // namespace bson_mapper
 

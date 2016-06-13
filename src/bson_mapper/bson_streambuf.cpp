@@ -77,5 +77,70 @@ int bson_output_streambuf::insert(int ch) {
     return ch;
 }
 
+char_array_streambuf::char_array_streambuf(const char *data, size_t len)
+    : _begin(data), _end(data + len), _current(_begin) {
+}
+
+int char_array_streambuf::underflow() {
+    if (_current == _end) {
+        return EOF;
+    }
+    return *_current;
+}
+
+int char_array_streambuf::uflow() {
+    if (_current == _end) {
+        return EOF;
+    }
+    return *(_current++);
+}
+
+int char_array_streambuf::pbackfail(int ch) {
+    // We can't put back a character if the current pointer is all the way at the beginning,
+    // or if the given character does not match
+    if (_current == _begin || (ch != EOF && ch != _current[-1])) {
+        return EOF;
+    }
+    _current--;
+    return *_current;
+}
+
+std::streamsize char_array_streambuf::showmanyc() {
+    return _end - _current;
+}
+
+std::streampos char_array_streambuf::seekpos(std::streampos sp, std::ios_base::openmode which) {
+    if (which & std::ios_base::in) {
+        _current = std::max(std::min(_begin + sp, _end), _begin);
+    }
+    // clamp current pointer to be within the buffer.
+    return std::distance(_current, _end);
+}
+
+std::streampos char_array_streambuf::seekoff(std::streamoff off, std::ios_base::seekdir way,
+                                             std::ios_base::openmode which) {
+    // offset is relative to either the beginning, current, or end pointers.
+    if (which & std::ios_base::in) {
+        switch (way) {
+            case std::ios_base::beg:
+                _current = _begin + off;
+                break;
+            case std::ios_base::cur:
+                _current = _current + off;
+                break;
+            case std::ios_base::end:
+                _current = _end + off;
+                break;
+        }
+    }
+    // clamp current pointer to be within the buffer.
+    _current = std::max(std::min(_current, _end), _begin);
+    return std::distance(_begin, _current);
+}
+
+bson_input_streambuf::bson_input_streambuf(const bsoncxx::document::view &v)
+    : char_array_streambuf((const char *)v.data(), v.length()) {
+}
+
 BSON_MAPPER_INLINE_NAMESPACE_END
 }  // namespace bson_mapper

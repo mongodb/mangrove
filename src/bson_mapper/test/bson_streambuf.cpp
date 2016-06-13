@@ -50,7 +50,7 @@ class doc_validator {
     bsoncxx::document::value _doc;
 };
 
-TEST_CASE("bson_streambuf can faithfully transfer a document",
+TEST_CASE("bson_output_streambuf can faithfully transfer a document",
           "[bson_mapper::bson_output_streambuf]") {
     // set up test BSON document
     std::string json_str = "{\"a\": 1, \"b\":[1,2,3], \"c\": {\"a\": 1}}";
@@ -71,4 +71,54 @@ TEST_CASE("bson_streambuf can faithfully transfer a document",
     // write document second time
     doc_stream.write(reinterpret_cast<const char *>(data), len);
     REQUIRE(validator.count() == 2);
+}
+
+TEST_CASE("char_array_streambuf properly implements seeking.",
+          "[bson_mapper::bson_input_streambuf]") {
+    size_t len = 100;
+    char *data = new char[len];
+    char_array_streambuf buffer = char_array_streambuf(data, len);
+    std::istream is(&buffer);
+
+    // Seek through the buffer
+    is.seekg(0, is.beg);
+    REQUIRE(is.tellg() == 0);
+    is.seekg(0, is.end);
+    REQUIRE(is.tellg() == len);
+
+    is.seekg(50, is.beg);
+    REQUIRE(is.tellg() == 50);
+    is.seekg(-20, is.end);
+    REQUIRE(is.tellg() == len - 20);
+
+    // seek relative to current position
+    std::streampos current_pos = is.tellg();
+    is.seekg(10, is.cur);
+    REQUIRE(is.tellg() == (int)current_pos + 10);
+
+    // seeking cannot go past buffer
+    is.seekg(len + 100);
+    REQUIRE(is.tellg() == len);
+}
+
+TEST_CASE("bson_input_streambuf can faithfully send over the bytes of a BSON document",
+          "[bson_mapper::bson_input_streambuf]") {
+    // set up test BSON document
+    std::string json_str = "{\"a\": 1, \"b\":[1,2,3], \"c\": {\"a\": 1}}";
+    auto bson_obj = bsoncxx::from_json(json_str);
+    auto bson_view = bson_obj.view();
+    const uint8_t *data = bson_view.data();
+    int len = bson_view.length();
+
+    // set up istream
+    bson_istream bis(bson_view);
+
+    // read bytes of BSON document
+    uint8_t *new_data = new uint8_t[len];
+    bis.read((char *)new_data, len);
+    auto new_doc_view = bsoncxx::document::view(new_data, len);
+    REQUIRE(bson_view == new_doc_view);
+    // read one more byte, should reach EOF
+    bis.ignore(1);
+    REQUIRE(bis.eof());
 }
