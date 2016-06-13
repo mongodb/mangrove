@@ -21,7 +21,6 @@
 #include <iostream>
 
 using namespace bson_mapper;
-using document_callback = bson_output_streambuf::document_callback;
 
 /**
  * An object that compares a given BSON document to an original reference.
