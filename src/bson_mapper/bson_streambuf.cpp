@@ -14,6 +14,14 @@
 
 #include <bson_mapper/config/prelude.hpp>
 
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <stdexcept>
+#include <streambuf>
+
+#include <bson.h>
+
 #include "bson_streambuf.hpp"
 
 namespace bson_mapper {
