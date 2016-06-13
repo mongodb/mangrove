@@ -18,7 +18,10 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/types.hpp>
 
+#include <iostream>
+
 using namespace bson_mapper;
+using document_callback = std::function<void(bsoncxx::document::value)>;
 
 /**
  * A callable object that compares a given BSON document to an original reference.
@@ -26,17 +29,25 @@ using namespace bson_mapper;
  */
 class doc_validator_callback {
    public:
-    doc_validator_callback(bsoncxx::document::value doc) : _doc(doc) {
+    doc_validator_callback(bsoncxx::document::value doc) : _doc(doc), _count(0) {
+    }
+
+    // Getter for the number of document compared so far.
+    int count() {
+        return _count;
     }
 
     /**
      * This asserts that the given document is the same as the reference document.
      */
     void operator()(bsoncxx::document::value v) {
+        _count++;
         REQUIRE(v.view() == _doc.view());
     }
 
    private:
+    // Keeps track of the number of documents compared by this validator.
+    int _count;
     bsoncxx::document::value _doc;
 };
 
@@ -50,14 +61,15 @@ TEST_CASE("bson_streambuf can faithfully transfer a document",
     int len = bson_view.length();
 
     // set up callback
-    doc_validator_callback cb(bson_obj);
+    auto cb = document_callback(doc_validator_callback(bson_obj));
 
     // set up stream
-    bson_output_streambuf b_buff(cb);
+    bson_output_streambuf b_buff(&cb);
     std::ostream doc_stream(&b_buff);
 
     // write document to stream
     doc_stream.write(reinterpret_cast<const char *>(data), len);
     // write document second time
     doc_stream.write(reinterpret_cast<const char *>(data), len);
+    REQUIRE(cb.target<doc_validator_callback>()->count() == 2);
 }

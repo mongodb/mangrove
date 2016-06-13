@@ -16,13 +16,6 @@
 
 #include <bson_mapper/config/prelude.hpp>
 
-#include <cassert>
-#include <cstdio>
-#include <iostream>
-#include <stdexcept>
-#include <streambuf>
-
-#include <bson.h>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/json.hpp>
 
@@ -41,10 +34,11 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
 
     /**
     * Constructs a new BSON Output Streambuffer
-    * that inserts documents into the given collection.
-    * @param coll A pointer to a MongoDB collection.
+    * that passes documents to the given callback function.
+    * @param cb A pointer to function that takes a document::value and returns void.
+    * The caller must manage the lifetime of the pointer.
     */
-    bson_output_streambuf(document_callback cb);
+    bson_output_streambuf(document_callback *cb);
 
     /**
     * This function is called when writing to the stream and the buffer is full.
@@ -61,6 +55,10 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     */
     virtual int underflow() override;
 
+    // document_callback *callback() {
+    //     return &_cb;
+    // }
+
    private:
     /**
     * This function inserts a byte of BSON data into the buffer.
@@ -73,9 +71,9 @@ class BSON_MAPPER_API bson_output_streambuf : public std::streambuf {
     * @return    The byte inserted, or EOF if something failed.
     */
     BSON_MAPPER_PRIVATE int insert(int ch);
-    // This accepts a document::value and returns void.
-    document_callback _cb;
-    std::unique_ptr<uint8_t, void (*)(std::uint8_t*)> _data;
+    // A pointer to a callback that accepts a document::value and returns void.
+    document_callback *_cb;
+    std::unique_ptr<uint8_t, void (*)(std::uint8_t *)> _data;
     size_t _len = 0;
     size_t _bytes_read = 0;
 };
