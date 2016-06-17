@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_definitions(-DMONGO_CXX_ODM_COMPILING)
-add_subdirectory(bson_mapper)
-add_subdirectory(mongo_odm)
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: libmongo_odm
+Description: The MongoDB C++11 ODM BSON Library
+URL: http://github.com/mongodb/mongo-cxx-odm
+Version: @MONGO_ODM_VERSION@
+Requires.private: libbsoncxx >= @LIBBSONCXX_REQUIRED_VERSION@
+Cflags: -I${includedir}/mongo_odm/@MONGO_ODM_INLINE_NAMESPACE@
+Libs: -L${libdir} -lmongo_odm

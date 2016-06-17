@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_definitions(-DMONGO_CXX_ODM_COMPILING)
-add_subdirectory(bson_mapper)
-add_subdirectory(mongo_odm)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/src/third_party/catch/include
+)
+
+add_executable(test_mongo_odm
+    main.cpp
+    odm_collection.cpp
+)
+
+target_link_libraries(test_mongo_odm mongo_odm_static)
+add_test(mongo_odm test_mongo_odm)

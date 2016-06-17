@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_definitions(-DMONGO_CXX_ODM_COMPILING)
-add_subdirectory(bson_mapper)
-add_subdirectory(mongo_odm)
+set(LIBMONGO_ODM_VERSION_MAJOR @MONGO_ODM_VERSION_MAJOR@)
+set(LIBMONGO_ODM_VERSION_MINOR @MONGO_ODM_VERSION_MINOR@)
+set(LIBMONGO_ODM_VERSION_PATCH @MONGO_ODM_VERSION_PATCH@)
+set(LIBMONGO_ODM_PACKAGE_VERSION @MONGO_ODM_VERSION@)
+set(LIBMONGO_ODM_LIBRARIES mongo_odm)
+
+@PACKAGE_INIT@
+
+set_and_check(LIBMONGO_ODM_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/@PACKAGE_INCLUDE_INSTALL_DIRS@")
+set_and_check(LIBMONGO_ODM_LIBRARY_DIRS "${PACKAGE_PREFIX_DIR}/@PACKAGE_LIBRARY_INSTALL_DIRS@")
+

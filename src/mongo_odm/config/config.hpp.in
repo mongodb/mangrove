@@ -1,4 +1,4 @@
-// Copyright 2016 MongoDB Inc.
+// Copyright 2014 MongoDB Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#cmakedefine MONGO_ODM_POLY_USE_STD_EXPERIMENTAL
+#cmakedefine MONGO_ODM_POLY_USE_MNMLSTC
+#cmakedefine MONGO_ODM_POLY_USE_SYSTEM_MNMLSTC
+#cmakedefine MONGO_ODM_POLY_USE_BOOST
 
-int main(int argc, char** argv) {
-    int result = Catch::Session().run(argc, argv);
-    return result;
-}
+#define MONGO_ODM_INLINE_NAMESPACE_BEGIN inline namespace @MONGO_ODM_INLINE_NAMESPACE@ {
+
+#define MONGO_ODM_INLINE_NAMESPACE_END }  // namespace @MONGO_ODM_INLINE_NAMESPACE@
