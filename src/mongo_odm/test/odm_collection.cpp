@@ -52,48 +52,6 @@ auto doc_2_view = doc_2.view();
 
 Foo obj{1, 4, 9};
 
-TEST_CASE("Function to_document can faithfully convert objects to BSON documents.",
-          "[mongo_odm::to_document]") {
-    document::value val = to_document(obj);
-    auto v = val.view();
-
-    REQUIRE(v["a"].get_int32() == obj.a);
-    REQUIRE(v["b"].get_int32() == obj.b);
-    REQUIRE(v["c"].get_int32() == obj.c);
-}
-
-TEST_CASE("Function to_obj can faithfully convert documents to objects.", "[mongo_odm::to_obj]") {
-    // Test return-by-value
-    Foo obj1 = to_obj<Foo>(doc_view);
-    // Test fill-by-reference
-    Foo obj2;
-    to_obj(doc_view, obj2);
-
-    REQUIRE(doc_view["a"].get_int32() == obj1.a);
-    REQUIRE(doc_view["b"].get_int32() == obj1.b);
-    REQUIRE(doc_view["c"].get_int32() == obj1.c);
-    //
-    REQUIRE(doc_view["a"].get_int32() == obj2.a);
-    REQUIRE(doc_view["b"].get_int32() == obj2.b);
-    REQUIRE(doc_view["c"].get_int32() == obj2.c);
-}
-
-TEST_CASE("Function to_optional_obj can convert optional documents to optional objects.",
-          "[mongo_odm::to_optional_obj]") {
-    auto empty_optional = mongocxx::stdx::optional<document::value>();
-    mongocxx::stdx::optional<Foo> should_be_empty = to_optional_obj<Foo>(empty_optional);
-
-    REQUIRE(!should_be_empty);
-
-    auto should_be_filled = to_optional_obj<Foo>(mongocxx::stdx::optional<document::value>(doc));
-    REQUIRE(should_be_filled);
-    if (should_be_filled) {
-    }
-    REQUIRE(doc_view["a"].get_int32() == should_be_filled->a);
-    REQUIRE(doc_view["b"].get_int32() == should_be_filled->b);
-    REQUIRE(doc_view["c"].get_int32() == should_be_filled->c);
-}
-
 TEST_CASE(
     "ODM_Collection class wraps collection's CRUD interface, with automatic "
     "serialization.",
@@ -134,56 +92,6 @@ TEST_CASE(
         REQUIRE(i == 1);
     }
 
-    // test count
-    SECTION("Test count", "[mongo_odm::odm_collection]") {
-        coll.delete_many({});
-        int c0 = foo_coll.count(obj);
-        REQUIRE(c0 == 0);
-        coll.insert_one(doc_view);
-        int c1 = foo_coll.count(obj);
-        REQUIRE(c1 == 1);
-        coll.insert_one(doc_view);
-        int c2 = foo_coll.count(obj);
-        REQUIRE(c2 == 2);
-        for (int i = 0; i < 10; i++) {
-            coll.insert_one(doc_view);
-        }
-        int c12 = foo_coll.count(obj);
-        REQUIRE(c12 == 12);
-        // Test that options are passed correctly
-        options::count opts;
-        opts.limit(5);
-        int c5 = foo_coll.count(obj, opts);
-        REQUIRE(c5 == 5);
-    }
-
-    // test delete_many
-    SECTION("Test delete_many", "[mongo_odm::odm_collection]") {
-        coll.delete_many({});
-        for (int i = 0; i < 10; i++) {
-            coll.insert_one(doc_view);
-        }
-        auto res = foo_coll.delete_many(obj);
-        REQUIRE(res);
-        if (res) {
-            int c = res.value().deleted_count();
-            REQUIRE(c == 10);
-        }
-    }
-
-    // test delete_one
-
-    SECTION("Test delete_one", "[mongo_odm::odm_collection]") {
-        coll.delete_many({});
-        coll.insert_one(doc_view);
-        auto res = foo_coll.delete_one(obj);
-        REQUIRE(res);
-        if (res) {
-            int c = res.value().deleted_count();
-            REQUIRE(c == 1);
-        }
-    }
-
     // test find
     SECTION("Test find()", "[mongo_odm::odm_collection]") {
         coll.delete_many({});
@@ -193,26 +101,14 @@ TEST_CASE(
             coll.insert_one(doc_2_view);
         }
 
-        SECTION("Test find() with document filter", "[mongo_odm::odm_collection]") {
-            auto filter = from_json("{\"c\": {\"$gt\": 100}}").view();
-            deserializing_cursor<Foo> cur = foo_coll.find(filter);
-            int i = 0;
-            for (Foo f : cur) {
-                REQUIRE(f.c > 100);
-                i++;
-            }
-            REQUIRE(i == 5);
+        auto filter = from_json("{\"c\": {\"$gt\": 100}}").view();
+        deserializing_cursor<Foo> cur = foo_coll.find(filter);
+        int i = 0;
+        for (Foo f : cur) {
+            REQUIRE(f.c > 100);
+            i++;
         }
-
-        SECTION("Test find() with object filter", "[mongo_odm::odm_collection]") {
-            deserializing_cursor<Foo> cur = foo_coll.find(obj);
-            int i = 0;
-            for (Foo f : cur) {
-                REQUIRE(f == obj);
-                i++;
-            }
-            REQUIRE(i == 5);
-        }
+        REQUIRE(i == 5);
     }
 
     SECTION("Test find_one()", "[mongo_odm::odm_collection]") {
@@ -245,49 +141,10 @@ TEST_CASE(
     // TODO test when document could not be found
     SECTION("Test find_one_and_replace()", "[mongo_odm::odm_collection]") {
         coll.delete_many({});
-
         Foo replacement{1, 4, 555};
-
-        SECTION("Test find_one_and_replace() with document filter", "[mongo_odm::odm_collection]") {
-            coll.insert_one(doc_view);
-            mongocxx::stdx::optional<Foo> res =
-                foo_coll.find_one_and_replace(doc_view, replacement);
-            REQUIRE(res);
-            if (res) {
-                Foo obj_test = res.value();
-                REQUIRE(obj_test == obj);
-            }
-        }
-
-        SECTION("Test find_one_and_replace() with object filter", "[mongo_odm::odm_collection]") {
-            coll.insert_one(doc_view);
-            // This time return replacement object
-            options::find_one_and_replace opts;
-            opts.return_document(options::return_document::k_after);
-            mongocxx::stdx::optional<Foo> res =
-                foo_coll.find_one_and_replace(obj, replacement, opts);
-            REQUIRE(res);
-            if (res) {
-                Foo obj_test = res.value();
-                REQUIRE(obj_test == replacement);
-            }
-        }
-
-        SECTION("Test find_one_and_replace() with failing match.", "[mongo_odm::odm_collection]") {
-            auto res = foo_coll.find_one_and_replace(Foo{-1, -1, -1}, obj);
-            REQUIRE(!res);
-        }
-    }
-
-    // Test find_one_and_update()
-    SECTION("Test find_one_and_update().", "[mongo_odm::odm_collection]") {
-        coll.delete_many({});
         coll.insert_one(doc_view);
 
-        std::string update_str = "{\"$inc\": {\"a\": 10}}";
-        auto update_doc = from_json(update_str);
-        auto update_view = update_doc.view();
-        auto res = foo_coll.find_one_and_update(obj, update_view);
+        mongocxx::stdx::optional<Foo> res = foo_coll.find_one_and_replace(doc_view, replacement);
         REQUIRE(res);
         if (res) {
             Foo obj_test = res.value();
@@ -334,58 +191,7 @@ TEST_CASE(
         coll.insert_one(doc_view);
         Foo obj2{1, 4, 999};
 
-        SECTION("Test replace_one() with a document filter.", "[mongo_odm::odm_collection]") {
-            auto res = foo_coll.replace_one(doc_view, obj2);
-            REQUIRE(res);
-            if (res) {
-                int c = res.value().modified_count();
-                REQUIRE(c == 1);
-            }
-        }
-
-        SECTION("Test replace_one() with an object filter.", "[mongo_odm::odm_collection]") {
-            coll.insert_one(doc_view);
-            auto res = foo_coll.replace_one(obj, obj2);
-            REQUIRE(res);
-            if (res) {
-                int c = res.value().modified_count();
-                REQUIRE(c == 1);
-            }
-        }
-    }
-
-    // Test update_many()
-    SECTION("Test update_many().", "[mongo_odm::odm_collection]") {
-        coll.delete_many({});
-        for (int i = 0; i < 5; i++) {
-            coll.insert_one(doc_view);
-        }
-
-        std::string update_str = "{\"$set\": {\"a\": 10}}";
-        auto update_doc = from_json(update_str);
-        auto update_view = update_doc.view();
-
-        auto res = foo_coll.update_many(obj, update_view);
-        REQUIRE(res);
-        if (res) {
-            int c = res.value().modified_count();
-            REQUIRE(c == 5);
-        }
-    }
-
-    // Test update_one()
-    SECTION("Test update_one().", "[mongo_odm::odm_collection]") {
-        coll.delete_many({});
-        // Even if there are multiple documents, update_one() should only update one of them.
-        for (int i = 0; i < 5; i++) {
-            coll.insert_one(doc_view);
-        }
-
-        std::string update_str = "{\"$set\": {\"a\": 10}}";
-        auto update_doc = from_json(update_str);
-        auto update_view = update_doc.view();
-
-        auto res = foo_coll.update_one(obj, update_view);
+        auto res = foo_coll.replace_one(doc_view, obj2);
         REQUIRE(res);
         if (res) {
             int c = res.value().modified_count();
