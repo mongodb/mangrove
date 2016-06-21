@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <bson_mapper/config/prelude.hpp>
+
 #include <iostream>
 
 #include <bsoncxx/builder/basic/document.hpp>
@@ -21,6 +23,9 @@
 
 #include <bson_mapper/archiver_mock.hpp>
 #include <bson_mapper/bson_streambuf.hpp>
+
+namespace bson_mapper {
+BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 
 /**
  * Converts a serializable object into a BSON document value
@@ -35,7 +40,7 @@ template <class T>
 bsoncxx::document::value to_document(const T& obj) {
     bsoncxx::stdx::optional<bsoncxx::document::value> doc;
     bson_mapper::bson_ostream bos([&doc](bsoncxx::document::value v) { doc = std::move(v); });
-    // TODO cereal::BSONOutputArchiver archiver(bos);
+    // TODO bson_mapper::BSONOutputArchiver archiver(bos);
     out_archiver_mock<T> archive(bos);
     archive(obj);
     return doc.value();
@@ -56,7 +61,7 @@ T to_obj(bsoncxx::document::view v) {
     static_assert(std::is_default_constructible<T>::value,
                   "Template type must be default constructible");
     bson_mapper::bson_istream bis(v);
-    // TODO cereal::BSONInputArchive archive(bis);
+    // TODO bson_mapper::BSONInputArchive archive(bis);
     in_archiver_mock<T> archive(bis);
     T obj;
     archive(obj);
@@ -76,7 +81,7 @@ T to_obj(bsoncxx::document::view v) {
 template <class T>
 void to_obj(bsoncxx::document::view v, T& obj) {
     bson_mapper::bson_istream bis(v);
-    // TODO cereal::BSONInputArchive archive(bis);
+    // TODO bson_mapper::BSONInputArchive archive(bis);
     in_archiver_mock<T> archive(bis);
     archive(obj);
 }
@@ -141,3 +146,8 @@ class serializing_iterator
    private:
     Iter _ci;
 };
+
+BSON_MAPPER_INLINE_NAMESPACE_END
+}  // namespace bson_mapper
+
+#include <bson_mapper/config/postlude.hpp>

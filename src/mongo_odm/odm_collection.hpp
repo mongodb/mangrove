@@ -14,14 +14,19 @@
 
 #pragma once
 
+#include <mongo_odm/config/prelude.hpp>
+
 #include <iostream>
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/stdx/optional.hpp>
 #include <mongocxx/collection.hpp>
 
-#include <bson_mapper/utility.hpp>
+#include <bson_mapper/mapping_functions.hpp>
 #include <mongo_odm/deserializing_cursor.hpp>
+
+namespace mongo_odm {
+MONGO_ODM_INLINE_NAMESPACE_BEGIN
 
 template <class T>
 class odm_collection {
@@ -53,7 +58,7 @@ class odm_collection {
     ///
     /// @return A deserializing_cursor with the results.
     /// @throws
-    ///   If the operation failed, the returned cursor will throw an exception::query
+    ///   If the operation failed, the returned cursor will throw an mongocxx::exception::query
     ///   when it is iterated.
     ///
     /// @see http://docs.mongodb.org/manual/reference/command/aggregate/
@@ -74,7 +79,7 @@ class odm_collection {
     ///
     /// @return Cursor with deserialized objects from the collection.
     /// @throws
-    ///   If the find failed, the returned cursor will throw exception::query when it
+    ///   If the find failed, the returned cursor will throw mongocxx::exception::query when it
     ///   is iterated.
     ///
     /// @see http://docs.mongodb.org/manual/core/read-operations-introduction/
@@ -94,14 +99,14 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::find
     ///
     /// @return An optional object that matched the filter.
-    /// @throws exception::query if the operation fails.
+    /// @throws mongocxx::exception::query if the operation fails.
     ///
     /// @see http://docs.mongodb.org/manual/core/read-operations-introduction/
     ///
     mongocxx::stdx::optional<T> find_one(
         bsoncxx::document::view_or_value filter,
         const mongocxx::options::find& options = mongocxx::options::find()) {
-        return to_optional_obj<T>(_coll.find_one(filter, options));
+        return bson_mapper::to_optional_obj<T>(_coll.find_one(filter, options));
     }
 
     ///
@@ -114,13 +119,13 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::find_one_and_delete
     ///
     /// @return The deserialized object that was deleted from the database.
-    /// @throws exception::write if the operation fails.
+    /// @throws mongocxx::exception::write if the operation fails.
     ///
     mongocxx::stdx::optional<T> find_one_and_delete(
         bsoncxx::document::view_or_value filter,
         const mongocxx::options::find_one_and_delete& options =
             mongocxx::options::find_one_and_delete()) {
-        return to_optional_obj<T>(_coll.find_one_and_delete(filter, options));
+        return bson_mapper::to_optional_obj<T>(_coll.find_one_and_delete(filter, options));
     }
 
     ///
@@ -136,7 +141,7 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::find_one_and_replace.
     ///
     /// @return The original or replaced object.
-    /// @throws exception::write if the operation fails.
+    /// @throws mongocxx::exception::write if the operation fails.
     ///
     /// @note
     ///   In order to pass a write concern to this, you must use the collection
@@ -146,8 +151,8 @@ class odm_collection {
         bsoncxx::document::view_or_value filter, const T& replacement,
         const mongocxx::options::find_one_and_replace& options =
             mongocxx::options::find_one_and_replace()) {
-        return to_optional_obj<T>(
-            _coll.find_one_and_replace(filter, to_document(replacement), options));
+        return bson_mapper::to_optional_obj<T>(
+            _coll.find_one_and_replace(filter, bson_mapper::to_document(replacement), options));
     }
 
     ///
@@ -162,11 +167,11 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::insert.
     ///
     /// @return The result of attempting to perform the insert.
-    /// @throws exception::write if the operation fails.
+    /// @throws mongocxx::exception::write if the operation fails.
     ///
     mongocxx::stdx::optional<mongocxx::result::insert_one> insert_one(
         T obj, const mongocxx::options::insert& options = mongocxx::options::insert()) {
-        return _coll.insert_one(to_document(obj), options);
+        return _coll.insert_one(bson_mapper::to_document(obj), options);
     }
 
     ///
@@ -189,7 +194,7 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::insert.
     ///
     /// @return The result of attempting to performing the insert.
-    /// @throws exception::write when the operation fails.
+    /// @throws mongocxx::exception::write when the operation fails.
     ///
     template <typename container_type>
     mongocxx::stdx::optional<mongocxx::result::insert_many> insert_many(
@@ -222,15 +227,16 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::insert.
     ///
     /// @return The result of attempting to performing the insert.
-    /// @throws exception::write if the operation fails.
+    /// @throws mongocxx::exception::write if the operation fails.
     ///
     /// TODO: document DocumentViewIterator concept or static assert
     template <typename object_iterator_type>
     mongocxx::stdx::optional<mongocxx::result::insert_many> insert_many(
         object_iterator_type begin, object_iterator_type end,
         const mongocxx::options::insert& options = mongocxx::options::insert()) {
-        return _coll.insert_many(serializing_iterator<object_iterator_type>(begin),
-                                 serializing_iterator<object_iterator_type>(end), options);
+        return _coll.insert_many(bson_mapper::serializing_iterator<object_iterator_type>(begin),
+                                 bson_mapper::serializing_iterator<object_iterator_type>(end),
+                                 options);
     }
 
     ///
@@ -244,16 +250,21 @@ class odm_collection {
     ///   Optional arguments, see mongocxx::options::update.
     ///
     /// @return The result of attempting to replace a document.
-    /// @throws exception::write if the operation fails.
+    /// @throws mongocxx::exception::write if the operation fails.
     ///
     /// @see http://docs.mongodb.org/manual/reference/command/update/
     ///
     mongocxx::stdx::optional<mongocxx::result::replace_one> replace_one(
         bsoncxx::document::view_or_value filter, const T& replacement,
         const mongocxx::options::update& options = mongocxx::options::update()) {
-        return _coll.replace_one(filter, to_document(replacement), options);
+        return _coll.replace_one(filter, bson_mapper::to_document(replacement), options);
     }
 
    private:
     mongocxx::collection _coll;
 };
+
+MONGO_ODM_INLINE_NAMESPACE_END
+}  // namespace bson_mapper
+
+#include <mongo_odm/config/postlude.hpp>

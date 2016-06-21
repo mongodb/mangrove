@@ -14,7 +14,7 @@
 
 #include "catch.hpp"
 
-#include <bson_mapper/utility.hpp>
+#include <bson_mapper/mapping_functions.hpp>
 
 #include <iostream>
 
@@ -35,11 +35,11 @@ class Foo {
 };
 
 // set up test BSON documents and objects
-std::string json_str = "{\"a\": 1, \"b\":4, \"c\": 9}";
+std::string json_str = R"({"a": 1, "b":4, "c": 9})";
 auto doc = from_json(json_str);
 auto doc_view = doc.view();
 
-std::string json_str_2 = "{\"a\": 1, \"b\":4, \"c\": 900}";
+std::string json_str_2 = R"({"a": 1, "b":4, "c": 900})";
 auto doc_2 = from_json(json_str_2);
 auto doc_2_view = doc_2.view();
 

@@ -27,6 +27,7 @@
 
 using namespace bsoncxx;
 using namespace mongocxx;
+using namespace mongo_odm;
 
 class Foo {
    public:
@@ -42,11 +43,11 @@ class Foo {
 };
 
 // set up test BSON documents and objects
-std::string json_str = "{\"a\": 1, \"b\":4, \"c\": 9}";
+std::string json_str = R"({"a": 1, "b":4, "c": 9})";
 auto doc = from_json(json_str);
 auto doc_view = doc.view();
 
-std::string json_str_2 = "{\"a\": 1, \"b\":4, \"c\": 900}";
+std::string json_str_2 = R"({"a": 1, "b":4, "c": 900})";
 auto doc_2 = from_json(json_str_2);
 auto doc_2_view = doc_2.view();
 
@@ -101,7 +102,7 @@ TEST_CASE(
             coll.insert_one(doc_2_view);
         }
 
-        auto filter = from_json("{\"c\": {\"$gt\": 100}}").view();
+        auto filter = from_json(R"({"c": {"$gt": 100}})").view();
         deserializing_cursor<Foo> cur = foo_coll.find(filter);
         int i = 0;
         for (Foo f : cur) {

@@ -23,7 +23,7 @@
 
 // A mock class for testing serialization w/o an actual BSON serializer class.
 // This class is templated, but requires the given type to have primitive fields a, b, and c.
-// This will be removed once cereal::BSONArchiver is merged in
+// This will be removed once bson_mapper::BSONArchiver is merged in
 template <class T>
 class out_archiver_mock {
    public:
@@ -45,7 +45,7 @@ class out_archiver_mock {
 
 // A mock class for testing de-serialization w/o an actual BSON serializer class.
 // This class is templated, but requiers the given type to ahve primitize fields a, b, c.
-// This will be removed once cereal::BSONArchiver is merged in
+// This will be removed once bson_mapper::BSONArchiver is merged in
 template <class T>
 class in_archiver_mock {
    public:

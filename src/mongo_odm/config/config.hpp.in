@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#cmakedefine MONGO_ODM_POLY_USE_STD_EXPERIMENTAL
-#cmakedefine MONGO_ODM_POLY_USE_MNMLSTC
-#cmakedefine MONGO_ODM_POLY_USE_SYSTEM_MNMLSTC
-#cmakedefine MONGO_ODM_POLY_USE_BOOST
-
 #define MONGO_ODM_INLINE_NAMESPACE_BEGIN inline namespace @MONGO_ODM_INLINE_NAMESPACE@ {
 
 #define MONGO_ODM_INLINE_NAMESPACE_END }  // namespace @MONGO_ODM_INLINE_NAMESPACE@

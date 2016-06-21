@@ -23,14 +23,6 @@
 #undef MONGO_ODM_INLINE_NAMESPACE_BEGIN
 #pragma push_macro("MONGO_ODM_INLINE_NAMESPACE_END")
 #undef MONGO_ODM_INLINE_NAMESPACE_END
-#pragma push_macro("MONGO_ODM_POLY_USE_MNMLSTC")
-#undef MONGO_ODM_POLY_USE_MNMLSTC
-#pragma push_macro("MONGO_ODM_POLY_USE_STD_EXPERIMENTAL")
-#undef MONGO_ODM_POLY_USE_STD_EXPERIMENTAL
-#pragma push_macro("MONGO_ODM_POLY_USE_SYSTEM_MNMLSTC")
-#undef MONGO_ODM_POLY_USE_SYSTEM_MNMLSTC
-#pragma push_macro("MONGO_ODM_POLY_USE_BOOST")
-#undef MONGO_ODM_POLY_USE_BOOST
 
 // src/mongo_odm/config/version.hpp.in
 #pragma push_macro("MONGO_ODM_VERSION_EXTRA")
@@ -60,10 +52,10 @@
 #pragma push_macro("MONGO_ODM_NO_DEPRECATED")
 #undef MONGO_ODM_NO_DEPRECATED
 
-#include <mongo_odm/config/config.hpp>
-#include <mongo_odm/config/version.hpp>
-#include <mongo_odm/config/export.hpp>
 #include <mongo_odm/config/compiler.hpp>
+#include <mongo_odm/config/config.hpp>
+#include <mongo_odm/config/export.hpp>
+#include <mongo_odm/config/version.hpp>
 
 #pragma push_macro("MONGO_ODM_UNREACHABLE")
 #undef MONGO_ODM_UNREACHABLE

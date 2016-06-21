@@ -53,7 +53,7 @@ class doc_validator {
 TEST_CASE("bson_output_streambuf can faithfully transfer a document",
           "[bson_mapper::bson_output_streambuf]") {
     // set up test BSON document
-    std::string json_str = "{\"a\": 1, \"b\":[1,2,3], \"c\": {\"a\": 1}}";
+    std::string json_str = R"({"a": 1, "b":[1,2,3], "c": {"a": 1}})";
     auto bson_obj = bsoncxx::from_json(json_str);
     auto bson_view = bson_obj.view();
     const uint8_t *data = bson_view.data();
@@ -104,7 +104,7 @@ TEST_CASE("char_array_streambuf properly implements seeking.",
 TEST_CASE("bson_input_streambuf can faithfully send over the bytes of a BSON document",
           "[bson_mapper::bson_input_streambuf]") {
     // set up test BSON document
-    std::string json_str = "{\"a\": 1, \"b\":[1,2,3], \"c\": {\"a\": 1}}";
+    std::string json_str = R"({"a": 1, "b":[1,2,3], "c": {"a": 1}})";
     auto bson_obj = bsoncxx::from_json(json_str);
     auto bson_view = bson_obj.view();
     const uint8_t *data = bson_view.data();

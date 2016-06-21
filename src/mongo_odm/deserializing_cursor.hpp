@@ -14,13 +14,18 @@
 
 #pragma once
 
+#include <mongo_odm/config/prelude.hpp>
+
 #include <iostream>
 
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/stdx/optional.hpp>
 #include <mongocxx/cursor.hpp>
 
-#include <bson_mapper/utility.hpp>
+#include <bson_mapper/mapping_functions.hpp>
+
+namespace mongo_odm {
+MONGO_ODM_INLINE_NAMESPACE_BEGIN
 
 /**
  * A class that wraps a mongocxx::cursor. It provides an iterator that deserializes the
@@ -80,9 +85,14 @@ class deserializing_cursor<T>::iterator : public std::iterator<std::input_iterat
      * underlying collection cursor iterator.
      */
     T operator*() {
-        return to_obj<T>(*_ci);
+        return bson_mapper::to_obj<T>(*_ci);
     }
 
    private:
     mongocxx::cursor::iterator _ci;
 };
+
+MONGO_ODM_INLINE_NAMESPACE_END
+}  // namespace bson_mapper
+
+#include <mongo_odm/config/postlude.hpp>
