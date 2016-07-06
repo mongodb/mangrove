@@ -27,10 +27,6 @@ struct DataA : public mongo_odm::model<DataA> {
     int32_t x, y;
     double z;
 
-    DataA() {
-        _id = bsoncxx::oid{bsoncxx::oid::init_tag_t{}};
-    }
-
     bool operator==(const DataA& other) {
         return std::tie(x, y, z) == std::tie(other.x, other.y, other.z);
     }
@@ -164,4 +160,131 @@ TEST_CASE(
     query_result->remove();
 
     REQUIRE(!DataB::find_one(query_filter.view()));
+}
+
+struct EmbeddedVals {
+    int32_t x;
+    double y;
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(x), CEREAL_NVP(y));
+    }
+
+    bool operator==(const EmbeddedVals& other) {
+        return std::tie(x, y) == std::tie(other.x, other.y);
+    }
+};
+
+struct DataC : public mongo_odm::model<DataC> {
+    int64_t a, b;
+    EmbeddedVals m;
+
+    DataC() {
+        _id = bsoncxx::oid{bsoncxx::oid::init_tag_t{}};
+    }
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(_id), CEREAL_NVP(a), CEREAL_NVP(b), CEREAL_NVP(m));
+    }
+
+    bool operator==(const DataC& other) {
+        return std::tie(a, b, m) == std::tie(other.a, other.b, other.m);
+    }
+};
+
+// Struct with _id as std::string
+struct DataD : public mongo_odm::model<DataD, std::string> {
+    int32_t x, y;
+    double z;
+
+    DataD() {}
+
+    DataD(const char* s) : mongo_odm::model<DataD, std::string>(s) {
+    }
+
+    bool operator==(const DataD& other) {
+        return std::tie(x, y, z) == std::tie(other.x, other.y, other.z);
+    }
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(_id), CEREAL_NVP(x), CEREAL_NVP(y), CEREAL_NVP(z));
+    }
+
+    std::string getID() {
+        return _id;
+    }
+};
+
+TEST_CASE(
+    "the model base class successfully allows the saving and removing of records when _id is of a "
+    "custom type.",
+    "[mongo_odm::model]") {
+    mongocxx::instance{};
+    mongocxx::client conn{mongocxx::uri{}};
+
+    auto db = conn["mongo_cxx_odm_model_test"];
+
+    DataD::setCollection(db["data_d"]);
+    DataD::drop();
+
+    DataD d("my very first DataD");
+
+    d.x = 16;
+    d.y = 32;
+    d.z = 1.50;
+
+    d.save();
+
+    auto query_filter = bsoncxx::builder::stream::document{} << "x" << 16
+                                                             << bsoncxx::builder::stream::finalize;
+
+    auto query_result = DataD::find_one(query_filter.view());
+
+    REQUIRE(query_result);
+    REQUIRE(d == *query_result);
+
+    query_result->remove();
+
+    REQUIRE(!DataD::find_one(query_filter.view()));
+}
+
+
+// TODO: When stdx::optional serialization is merged in, test whether or not a document with one of
+//       two fields set in EmbeddedVals will overwrite the other field if it already exists in an
+//       embedded document on the server.
+TEST_CASE(
+    "the model base class successfully allows the saving and removing of records with embedded "
+    "documents.",
+    "[mongo_odm::model]") {
+    mongocxx::instance{};
+    mongocxx::client conn{mongocxx::uri{}};
+
+    auto db = conn["mongo_cxx_odm_model_test"];
+
+    DataC::setCollection(db["data_c"]);
+    DataC::drop();
+
+    DataC c;
+
+    c.a = 229;
+    c.b = 43;
+    c.m.x = 13;
+    c.m.y = 1.50;
+
+    c.save();
+
+    auto query_filter = bsoncxx::builder::stream::document{} << "a" << 229
+                                                             << bsoncxx::builder::stream::finalize;
+
+    auto query_result = DataC::find_one(query_filter.view());
+
+    REQUIRE(query_result);
+    REQUIRE(c == *query_result);
+
+    query_result->remove();
+
+    REQUIRE(!DataC::find_one(query_filter.view()));
 }
