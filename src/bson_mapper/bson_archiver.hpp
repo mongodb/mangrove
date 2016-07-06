@@ -158,12 +158,13 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
     * @param stream
     *   The stream to which the archiver will output BSON data.
     */
-    BSONOutputArchive(std::ostream& stream)
+    BSONOutputArchive(std::ostream& stream, bool dotNotationMode = false)
         : OutputArchive<BSONOutputArchive>{this},
           _bsonBuilder{false},
           _writeStream{stream},
           _nextName{nullptr},
-          _objAsRootElement{false} {
+          _objAsRootElement{false},
+          _dotNotationMode{dotNotationMode} {
     }
 
    private:
@@ -217,23 +218,32 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             throw bson_mapper::Exception("Attempting to finish a nonexistent node.");
         }
 
+        // Open or close documents in the builder unless we are in dot notation mode.
         switch (_nodeTypeStack.top()) {
             case OutputNodeType::StartArray:
                 _bsonBuilder.open_array();
             // Don't break so that this array can also be closed.
             case OutputNodeType::InArray:
                 _bsonBuilder.close_array();
+                --_arrayNestingLevel;
                 break;
             case OutputNodeType::StartObject:
-                if (_nodeTypeStack.size() > 1 || _objAsRootElement) {
-                    _bsonBuilder.open_document();
+                if (!_dotNotationMode || _arrayNestingLevel > 0) {
+                    if (_nodeTypeStack.size() > 1 || _objAsRootElement) {
+                        _bsonBuilder.open_document();
+                    }
                 }
             // Don't break so that this document can also be closed.
             case OutputNodeType::InObject:
-                if (_nodeTypeStack.size() > 1) {
-                    _bsonBuilder.close_document();
-                } else if (_objAsRootElement) {
-                    _bsonBuilder.close_document();
+                if (!_dotNotationMode || _arrayNestingLevel > 0) {
+                    if (_nodeTypeStack.size() > 1) {
+                        _bsonBuilder.close_document();
+                    } else if (_objAsRootElement) {
+                        _bsonBuilder.close_document();
+                    }
+                } else if (_nodeTypeStack.size() > 1) {
+                    _embeddedNameStack.pop_back();
+                    //_embeddedNameStack.pop_back();
                 }
                 break;
         }
@@ -324,13 +334,19 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             // Start up either an object or an array, depending on state.
             if (topType == OutputNodeType::StartArray) {
                 _bsonBuilder.open_array();
+                ++_arrayNestingLevel;
                 _nodeTypeStack.top() = OutputNodeType::InArray;
             } else if (topType == OutputNodeType::StartObject) {
                 _nodeTypeStack.top() = OutputNodeType::InObject;
                 // Only open a document if this document is not in the
                 // root node or this is a root element.
                 if (_nodeTypeStack.size() > 1 || _objAsRootElement) {
-                    _bsonBuilder.open_document();
+                    if (_dotNotationMode && _arrayNestingLevel == 0) {
+                        _embeddedNameStack.push_back(_nextPotentialNodeName);
+                        //_embeddedNameStack.push_back(".");
+                    } else {
+                        _bsonBuilder.open_document();
+                    }
                 }
             }
 
@@ -348,7 +364,19 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             throw bson_mapper::Exception("Missing a name for current node or element.");
         } else {
             // Set the key of this element to the name stored by the archiver.
-            _bsonBuilder.key_view(_nextName);
+            if (!_dotNotationMode || _embeddedNameStack.empty() || _arrayNestingLevel > 0) {
+                _bsonBuilder.key_view(_nextName);
+            } else {
+                std::stringstream key;
+                for (const auto& name : _embeddedNameStack) {
+                    key << name << ".";
+                }
+                key << _nextName;
+                std::cout << key.str() << "!!\n";
+                _bsonBuilder.key_owned(key.str());
+            }
+
+            _nextPotentialNodeName = _nextName;
             _nextName = nullptr;
 
             // If this a named node in the root node, set up this node as a root element.
@@ -376,6 +404,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
     // The name of the next element to be added to the archive.
     char const* _nextName;
 
+    char const* _nextPotentialNodeName;
+
     // A stack maintaining the state of the nodes currently being written.
     std::stack<OutputNodeType> _nodeTypeStack;
 
@@ -383,9 +413,19 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
     // data base class required for classes that use bsoncxx view types.
     std::stack<bool> _curNodeInheritsUnderlyingBSONDataBase;
 
+    std::vector<std::string> _embeddedNameStack;
+
     // Boolean value that tracks whether or not the current root BSON document or array is being
     // treated as a root element.
     bool _objAsRootElement;
+
+    // Bool tracking whether or not the resulting document will specify the values of embedded
+    // fields in dot notation so they can be used as an argument to $set in an update operation.
+    bool _dotNotationMode;
+
+    // Int that tracks how many arrays we are currently nested in. If this is equal to 0, we are not
+    // in an array.
+    uint8_t _arrayNestingLevel;
 
 };  // BSONOutputArchive
 

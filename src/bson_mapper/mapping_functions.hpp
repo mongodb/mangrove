@@ -46,6 +46,25 @@ bsoncxx::document::value to_document(const T& obj) {
 }
 
 /**
+ * Converts a serializable object into a BSON document value in dotted notation for $set.
+ * TODO This is not very clean and kind of inefficient. Maybe we should be passing references
+ * into
+ * the bson_ostream callback?
+ * @tparam T   A type that is serializable to BSON using a BSONArchiver.
+ * @param  obj A serializable object
+ * @return     A BSON document value representing the given object.
+ */
+template <class T>
+bsoncxx::document::value to_dotted_notation_document(const T& obj) {
+    bsoncxx::stdx::optional<bsoncxx::document::value> doc;
+    bson_ostream bos([&doc](bsoncxx::document::value v) { doc = std::move(v); });
+    BSONOutputArchive archive(bos, true);
+    archive(obj);
+    return doc.value();
+}
+
+
+/**
 * Converts a bsoncxx document view to an object of the templated type through deserialization.
 * The object must be default-constructible.
 *

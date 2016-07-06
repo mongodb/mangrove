@@ -132,21 +132,19 @@ class model : public model_odm_base<IdType> {
      * Performs an update in the database that saves the current T object instance to the
      * collection mapped to this class.
      *
-     * In the terms of the CRUD specification, this uses replaceOne with the _id as the sole
-     * argument to the query filter and upsert=true so that objects that aren't already in the
-     * collection are automatically inserted.
+     * In the terms of the CRUD specification, this uses updateOne with the _id as the sole
+     * argument to the query filter, the T object serialized to dotted notation BSON as the $set
+     * operand, and upsert=true so that objects that aren't already in the collection are
+     * automatically inserted.
      *
-     * @see https://docs.mongodb.com/manual/reference/method/db.collection.replaceOne/
-     *
-     * @warning This will fully replace any object in the database with an _id equal to
-     *          this instance's _id.
+     * @see https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/
      */
     void save() {
         auto id_match_filter = bsoncxx::builder::stream::document{}
                                << "_id" << this->_id << bsoncxx::builder::stream::finalize;
 
         auto update = bsoncxx::builder::stream::document{}
-                      << "$set" << bson_mapper::to_document(*static_cast<T*>(this))
+                      << "$set" << bson_mapper::to_dotted_notation_document(*static_cast<T*>(this))
                       << bsoncxx::builder::stream::finalize;
 
         mongocxx::options::update opts{};
@@ -154,8 +152,6 @@ class model : public model_odm_base<IdType> {
         opts.upsert(true);
 
         _coll.collection().update_one(id_match_filter.view(), update.view(), opts);
-
-        //_coll.replace_one(id_match_filter.view(), *static_cast<T*>(this), opts);
     };
 
     /**

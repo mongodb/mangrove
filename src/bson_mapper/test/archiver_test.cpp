@@ -512,3 +512,63 @@ TEST_CASE(
         REQUIRE(a == a_cmp);
     }
 }
+
+TEST_CASE(
+    "the BSON archiver successfully serializes embedded classes with dot notation") {
+    {
+        std::ofstream os("embedded_dot_notation.bson", std::ios_base::binary);
+        bson_mapper::BSONOutputArchive archive(os, true);
+
+        DataA a1, a2;
+        DataB b1;
+
+        std::vector<DataA> test_obj_arr;
+
+        a1.x = 43;
+        a1.y = 229;
+        a1.z = 3.14;
+
+        a2.x = 26;
+        a2.y = 32;
+        a2.z = 3.4;
+
+        test_obj_arr.push_back(a1);
+        test_obj_arr.push_back(a2);
+
+        b1.a = 517259871609285984;
+        b1.b = 35781926586124;
+        b1.m = a2;
+        b1.arr = test_obj_arr;
+        b1.s = "hello world!";
+        b1.tp = std::chrono::system_clock::now();
+
+        archive(b1);
+    }
+
+    /*{
+        DataA a1;
+        DataA a2;
+        DataB b1;
+
+        std::vector<DataA> test_obj_arr;
+
+        DataC c1;
+        c1.resetValues();
+
+        int i;
+
+        std::chrono::system_clock::time_point tp;
+
+        std::ifstream is("data.bson");
+        bson_mapper::BSONInputArchive archive(is);
+        archive(CEREAL_NVP(tp), CEREAL_NVP(test_obj_arr), CEREAL_NVP(i), a1, a2, b1, c1);
+
+        REQUIRE(countKeys(c1.getUnderlyingBSONData()) == 21);
+
+        std::ofstream os("data_clone.bson", std::ios_base::binary);
+        bson_mapper::BSONOutputArchive oarchive(os);
+        oarchive(CEREAL_NVP(tp), CEREAL_NVP(test_obj_arr), CEREAL_NVP(i), a1, a2, b1, c1);
+    }*/
+
+    REQUIRE(file_cmp("data.bson", "data_clone.bson"));
+}
