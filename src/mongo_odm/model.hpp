@@ -27,7 +27,6 @@ MONGO_ODM_INLINE_NAMESPACE_BEGIN
 /**
  * Helper type trait widget that helps properly forward arguments to _id constructor.
  */
-
 template <typename... Ts>
 struct Widget : public std::false_type {};
 
@@ -36,6 +35,8 @@ struct Widget<T, T2, Ts...> : public std::is_same<T, std::decay_t<T2>> {};
 
 /**
  * Base class for mongo_odm::model that provides _id and _id construction.
+ * TODO: Once CXX-940 is resolved, this model_odm_base will no longer be necessary and the argument
+ *       forwarding logic can take place in the mongo_odm::model class.
  */
 template <typename IdType>
 class model_odm_base {
@@ -51,9 +52,6 @@ class model_odm_base {
 /**
  * Specialization of mongo_odm::model base class for IdType=bsoncxx::oid that provides a default
  * constructor for _id which safely constructs a bsoncxx::oid.
- *
- * TODO: Once CXX-940 is resolved, this base class will no longer be necessary and the argument
- *       forwarding logic can take place in the mongo_odm::model class.
  */
 template <>
 class model_odm_base<bsoncxx::oid> {

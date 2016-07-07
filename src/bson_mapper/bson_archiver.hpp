@@ -153,10 +153,22 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
 
    public:
     /**
-    * Construct a BSONOutputArchive that will output to the provided stream.
+    * Construct a BSONOutputArchive that will output serialized classes as BSON to the provided
+    * stream.
     *
     * @param stream
     *   The stream to which the archiver will output BSON data.
+    *
+    * @param dotNotationMode
+    *   If set to true, the BSONOutputArchive will output the values in embedded documents in dot
+    *   notation. This is useful when specifying the arguments to a $set field in a MongoDB update
+    *   command.
+    *
+    *   @see https://docs.mongodb.com/manual/core/document/#embedded-documents
+    *
+    *   @warning Documents produced by the archiver in dotNotationMode are not compatible with the
+    *            BSONInputArchiver and are only intended to be used as a way to produce the argument
+    *            to $set.
     */
     BSONOutputArchive(std::ostream& stream, bool dotNotationMode = false)
         : OutputArchive<BSONOutputArchive>{this},
@@ -219,23 +231,31 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             throw bson_mapper::Exception("Attempting to finish a nonexistent node.");
         }
 
-        // Open or close documents in the builder unless we are in dot notation mode.
         switch (_nodeTypeStack.top()) {
             case OutputNodeType::StartArray:
                 _bsonBuilder.open_array();
+                ++_arrayNestingLevel;
             // Don't break so that this array can also be closed.
             case OutputNodeType::InArray:
                 _bsonBuilder.close_array();
                 --_arrayNestingLevel;
                 break;
             case OutputNodeType::StartObject:
+                // Only consider creating a new document if we're not in dot notation mode, or if we
+                // are within an array somewhere.
                 if (!_dotNotationMode || _arrayNestingLevel > 0) {
                     if (_nodeTypeStack.size() > 1 || _objAsRootElement) {
                         _bsonBuilder.open_document();
                     }
+                } else if (_nodeTypeStack.size() > 1) {
+                    // Push back a dummy name so we don't accidentally pop an empty stack when
+                    // closing this empty document.
+                    _embeddedNameStack.push_back("");
                 }
             // Don't break so that this document can also be closed.
             case OutputNodeType::InObject:
+                // Only close the document if we are not in dot notation mode or if we are within an
+                // array somewhere.
                 if (!_dotNotationMode || _arrayNestingLevel > 0) {
                     if (_nodeTypeStack.size() > 1) {
                         _bsonBuilder.close_document();
@@ -243,8 +263,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
                         _bsonBuilder.close_document();
                     }
                 } else if (_nodeTypeStack.size() > 1) {
+                    // Pop the name of this embedded document off the stack.
                     _embeddedNameStack.pop_back();
-                    //_embeddedNameStack.pop_back();
                 }
                 break;
         }
@@ -339,12 +359,11 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
                 _nodeTypeStack.top() = OutputNodeType::InArray;
             } else if (topType == OutputNodeType::StartObject) {
                 _nodeTypeStack.top() = OutputNodeType::InObject;
-                // Only open a document if this document is not in the
-                // root node or this is a root element.
+                // Only open a document if this document is not in the root node or this is a root
+                // element.
                 if (_nodeTypeStack.size() > 1 || _objAsRootElement) {
                     if (_dotNotationMode && _arrayNestingLevel == 0) {
                         _embeddedNameStack.push_back(_nextPotentialNodeName);
-                        //_embeddedNameStack.push_back(".");
                     } else {
                         _bsonBuilder.open_document();
                     }
@@ -368,6 +387,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             if (!_dotNotationMode || _embeddedNameStack.empty() || _arrayNestingLevel > 0) {
                 _bsonBuilder.key_view(_nextName);
             } else {
+                // If we are in dot notation mode and we're not nested in array, build the name of
+                // this key.
                 std::stringstream key;
                 for (const auto& name : _embeddedNameStack) {
                     key << name << ".";
@@ -376,7 +397,10 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
                 _bsonBuilder.key_owned(std::move(key.str()));
             }
 
+            // Save the name of this key in case it is the name of an embedded document.
             _nextPotentialNodeName = _nextName;
+
+            // Reset the name of the next key.
             _nextName = nullptr;
 
             // If this a named node in the root node, set up this node as a root element.
@@ -404,6 +428,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
     // The name of the next element to be added to the archive.
     char const* _nextName;
 
+    // The name of the last element added to the archive, which may potentially be the name of the
+    // next embedded document. This is stored to support dot notation mode.
     char const* _nextPotentialNodeName;
 
     // A stack maintaining the state of the nodes currently being written.
@@ -413,6 +439,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
     // data base class required for classes that use bsoncxx view types.
     std::stack<bool> _curNodeInheritsUnderlyingBSONDataBase;
 
+    // A stack of names maintained in dot notation mode that keeps track of the names of the
+    // embedded documents we are nested in.
     std::vector<std::string> _embeddedNameStack;
 
     // Boolean value that tracks whether or not the current root BSON document or array is being

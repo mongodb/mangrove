@@ -30,8 +30,7 @@ BSON_MAPPER_INLINE_NAMESPACE_BEGIN
 /**
  * Converts a serializable object into a BSON document value
  * TODO This is not very clean and kind of inefficient. Maybe we should be passing references
- * into
- * the bson_ostream callback?
+ *      into the bson_ostream callback?
  * @tparam T   A type that is serializable to BSON using a BSONArchiver.
  * @param  obj A serializable object
  * @return     A BSON document value representing the given object.
@@ -48,11 +47,10 @@ bsoncxx::document::value to_document(const T& obj) {
 /**
  * Converts a serializable object into a BSON document value in dotted notation for $set.
  * TODO This is not very clean and kind of inefficient. Maybe we should be passing references
- * into
- * the bson_ostream callback?
+ *      into the bson_ostream callback?
  * @tparam T   A type that is serializable to BSON using a BSONArchiver.
  * @param  obj A serializable object
- * @return     A BSON document value representing the given object.
+ * @return     A BSON document value in dotted notation representing the given object.
  */
 template <class T>
 bsoncxx::document::value to_dotted_notation_document(const T& obj) {
