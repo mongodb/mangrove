@@ -111,10 +111,6 @@ struct DataB : public mongo_odm::model<DataB> {
     optional<int32_t> y;
     optional<double> z;
 
-    DataB() {
-        _id = bsoncxx::oid{bsoncxx::oid::init_tag_t{}};
-    }
-
     bool operator==(const DataB& other) {
         return std::tie(x, y, z) == std::tie(other.x, other.y, other.z);
     }
@@ -179,10 +175,6 @@ struct EmbeddedVals {
 struct DataC : public mongo_odm::model<DataC> {
     int64_t a, b;
     EmbeddedVals m;
-
-    DataC() {
-        _id = bsoncxx::oid{bsoncxx::oid::init_tag_t{}};
-    }
 
     template <class Archive>
     void serialize(Archive& ar) {
@@ -252,9 +244,6 @@ TEST_CASE(
     REQUIRE(!DataD::find_one(query_filter.view()));
 }
 
-// TODO: When stdx::optional serialization is merged in, test whether or not a document with one of
-//       two fields set in EmbeddedVals will overwrite the other field if it already exists in an
-//       embedded document on the server.
 TEST_CASE(
     "the model base class successfully allows the saving and removing of records with embedded "
     "documents.",
@@ -287,4 +276,91 @@ TEST_CASE(
     query_result->remove();
 
     REQUIRE(!DataC::find_one(query_filter.view()));
+}
+
+struct OptEmbeddedVals {
+    optional<int32_t> x;
+    optional<double> y;
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(x), CEREAL_NVP(y));
+    }
+
+    bool operator==(const OptEmbeddedVals& other) {
+        return std::tie(x, y) == std::tie(other.x, other.y);
+    }
+};
+
+struct DataE : public mongo_odm::model<DataE> {
+    int64_t a, b;
+    OptEmbeddedVals m;
+
+    DataE() = default;
+
+    DataE(bsoncxx::oid id) : mongo_odm::model<DataE>(id) {
+    }
+
+    template <class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(_id), CEREAL_NVP(a), CEREAL_NVP(b), CEREAL_NVP(m));
+    }
+
+    bool operator==(const DataE& other) {
+        return std::tie(a, b, m) == std::tie(other.a, other.b, other.m);
+    }
+
+    bsoncxx::oid getID() {
+        return _id;
+    }
+};
+
+TEST_CASE(
+    "the model base class does not overwrite existing fields in embedded documents on save (when "
+    "they are not in an array).",
+    "[mongo_odm::model]") {
+    mongocxx::instance{};
+    mongocxx::client conn{mongocxx::uri{}};
+
+    auto db = conn["mongo_cxx_odm_model_test"];
+
+    DataE::setCollection(db["data_e"]);
+    DataE::drop();
+
+    DataE e_with_embedded_x;
+
+    e_with_embedded_x.a = 229;
+    e_with_embedded_x.b = 43;
+    e_with_embedded_x.m.x = 13;
+
+    e_with_embedded_x.save();
+
+    auto query_filter = bsoncxx::builder::stream::document{} << "_id" << e_with_embedded_x.getID()
+                                                             << bsoncxx::builder::stream::finalize;
+
+    auto query_result = DataE::find_one(query_filter.view());
+
+    REQUIRE(query_result);
+    REQUIRE(!query_result->m.y);
+    REQUIRE(e_with_embedded_x == *query_result);
+
+    DataE e_with_embedded_y(e_with_embedded_x.getID());
+    e_with_embedded_y.a = 229;
+    e_with_embedded_y.b = 43;
+    e_with_embedded_y.m.y = 1.50;
+
+    e_with_embedded_y.save();
+
+    query_filter = bsoncxx::builder::stream::document{} << "_id" << e_with_embedded_y.getID()
+                                                        << bsoncxx::builder::stream::finalize;
+
+    query_result = DataE::find_one(query_filter.view());
+
+    REQUIRE(query_result);
+    REQUIRE(query_result->m.x);
+    REQUIRE(query_result->m.y);
+
+    query_result->remove();
+
+    REQUIRE(!DataE::find_one(query_filter.view()));
 }
