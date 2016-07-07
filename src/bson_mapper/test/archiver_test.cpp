@@ -513,8 +513,7 @@ TEST_CASE(
     }
 }
 
-TEST_CASE(
-    "the BSON archiver successfully serializes embedded classes with dot notation") {
+TEST_CASE("the BSON archiver successfully serializes embedded classes with dot notation") {
     {
         std::ofstream os("embedded_dot_notation.bson", std::ios_base::binary);
         bson_mapper::BSONOutputArchive archive(os, true);

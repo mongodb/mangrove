@@ -199,7 +199,8 @@ struct DataD : public mongo_odm::model<DataD, std::string> {
     int32_t x, y;
     double z;
 
-    DataD() {}
+    DataD() {
+    }
 
     DataD(const char* s) : mongo_odm::model<DataD, std::string>(s) {
     }
@@ -250,7 +251,6 @@ TEST_CASE(
 
     REQUIRE(!DataD::find_one(query_filter.view()));
 }
-
 
 // TODO: When stdx::optional serialization is merged in, test whether or not a document with one of
 //       two fields set in EmbeddedVals will overwrite the other field if it already exists in an
