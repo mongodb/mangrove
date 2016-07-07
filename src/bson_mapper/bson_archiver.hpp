@@ -164,7 +164,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
           _writeStream{stream},
           _nextName{nullptr},
           _objAsRootElement{false},
-          _dotNotationMode{dotNotationMode} {
+          _dotNotationMode{dotNotationMode},
+          _arrayNestingLevel{0} {
     }
 
    private:
@@ -372,8 +373,7 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
                     key << name << ".";
                 }
                 key << _nextName;
-                std::cout << key.str() << "!!\n";
-                _bsonBuilder.key_owned(key.str());
+                _bsonBuilder.key_owned(std::move(key.str()));
             }
 
             _nextPotentialNodeName = _nextName;
@@ -423,8 +423,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
     // fields in dot notation so they can be used as an argument to $set in an update operation.
     bool _dotNotationMode;
 
-    // Int that tracks how many arrays we are currently nested in. If this is equal to 0, we are not
-    // in an array.
+    // Byte-sized unsigned int that tracks how many arrays we are currently nested in. If this is
+    // equal to 0, we are not in an array and can write keys in dot notation.
     uint8_t _arrayNestingLevel;
 
 };  // BSONOutputArchive
