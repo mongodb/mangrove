@@ -358,7 +358,10 @@ TEST_CASE(
 
     REQUIRE(query_result);
     REQUIRE(query_result->m.x);
+    REQUIRE(e_with_embedded_x.m.x == *query_result->m.x);
+
     REQUIRE(query_result->m.y);
+    REQUIRE(e_with_embedded_y.m.y == *query_result->m.y);
 
     query_result->remove();
 
