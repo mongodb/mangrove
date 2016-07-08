@@ -113,11 +113,9 @@ class model : public model_odm_base<IdType> {
      * @warning This must be called with a new mongocxx::collection instance for every thread for
      *          the ODM to be thread-safe.
      *
-     * @warning The mongocxx::client collection with which the passed-in mongocxx::collection was
-     *          created must be in scope/not destructed when using the model's CRUD functionality or
-     *          else the functions will segfault. If the connection goes out of scope or is
-     *          destructed, this function must be called again with a fresh mongocxx::collection for
-     *          the model to work properly.
+     * @warning The parent mongocxx::client from which the mongocxx::collection argument was created
+     *          must outlive any of this model's CRUD methods. If the client object goes out of
+     *          scope, a new collection must be passed to this method before using any CRUD methods.
      */
     static void setCollection(const mongocxx::collection& coll) {
         _coll = odm_collection<T>(coll);
