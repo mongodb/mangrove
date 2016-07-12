@@ -26,12 +26,14 @@ MONGO_ODM_INLINE_NAMESPACE_BEGIN
 
 /**
  * Helper type trait widget that helps properly forward arguments to _id constructor.
+ * FirstTypeIsTheSame<T1, T2, ...>::value will be true when T1 and T2 are of the same type, and
+ * false otherwise.
  */
 template <typename... Ts>
-struct Widget : public std::false_type {};
+struct FirstTypeIsTheSame : public std::false_type {};
 
 template <typename T, typename T2, typename... Ts>
-struct Widget<T, T2, Ts...> : public std::is_same<T, std::decay_t<T2>> {};
+struct FirstTypeIsTheSame<T, T2, Ts...> : public std::is_same<T, std::decay_t<T2>> {};
 
 /**
  * Base class for mongo_odm::model that provides _id and _id construction.
@@ -41,7 +43,8 @@ struct Widget<T, T2, Ts...> : public std::is_same<T, std::decay_t<T2>> {};
 template <typename IdType>
 class model_odm_base {
    public:
-    template <typename... Ts, typename = std::enable_if_t<!Widget<model_odm_base, Ts...>::value>>
+    template <typename... Ts,
+              typename = std::enable_if_t<!FirstTypeIsTheSame<model_odm_base, Ts...>::value>>
     model_odm_base(Ts&&... ts) : _id(std::forward<Ts>(ts)...) {
     }
 
@@ -56,7 +59,8 @@ class model_odm_base {
 template <>
 class model_odm_base<bsoncxx::oid> {
    public:
-    template <typename... Ts, typename = std::enable_if_t<!Widget<model_odm_base, Ts...>::value>>
+    template <typename... Ts,
+              typename = std::enable_if_t<!FirstTypeIsTheSame<model_odm_base, Ts...>::value>>
     model_odm_base(Ts&&... ts) : _id(std::forward<Ts>(ts)...) {
     }
 
@@ -80,7 +84,7 @@ class model : public model_odm_base<IdType> {
 
    public:
     // Forward the arguments to the constructor of IdType
-    template <typename... Ts, typename = std::enable_if_t<!Widget<model, Ts...>::value>>
+    template <typename... Ts, typename = std::enable_if_t<!FirstTypeIsTheSame<model, Ts...>::value>>
     model(Ts&&... ts) : model_odm_base<IdType>(std::forward<Ts>(ts)...) {
     }
 
