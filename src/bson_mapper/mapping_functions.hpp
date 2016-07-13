@@ -61,7 +61,6 @@ bsoncxx::document::value to_dotted_notation_document(const T& obj) {
     return doc.value();
 }
 
-
 /**
 * Converts a bsoncxx document view to an object of the templated type through deserialization.
 * The object must be default-constructible.
