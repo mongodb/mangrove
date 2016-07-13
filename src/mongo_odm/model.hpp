@@ -43,6 +43,15 @@ struct FirstTypeIsTheSame<T, T2, Ts...> : public std::is_same<T, std::decay_t<T2
 template <typename IdType>
 class model_odm_base {
    public:
+    /**
+     * Forward the arguments to the constructor of IdType.
+     *
+     * A std::enable_if is included to disable the template for the copy constructor case so the
+     * default is used.
+     *
+     * @param ts
+     *    The variadic pack of arguments to be forwarded to the constructor of IdType.
+     */
     template <typename... Ts,
               typename = std::enable_if_t<!FirstTypeIsTheSame<model_odm_base, Ts...>::value>>
     model_odm_base(Ts&&... ts) : _id(std::forward<Ts>(ts)...) {
@@ -59,6 +68,15 @@ class model_odm_base {
 template <>
 class model_odm_base<bsoncxx::oid> {
    public:
+    /**
+     * Forward the arguments to the constructor of bsoncxx::oid.
+     *
+     * A std::enable_if is included to disable the template for the copy constructor case so the
+     * default is used.
+     *
+     * @param ts
+     *    The variadic pack of arguments to be forwarded to the constructor of bsoncxx::oid.
+     */
     template <typename... Ts,
               typename = std::enable_if_t<!FirstTypeIsTheSame<model_odm_base, Ts...>::value>>
     model_odm_base(Ts&&... ts) : _id(std::forward<Ts>(ts)...) {
@@ -83,7 +101,15 @@ class model : public model_odm_base<IdType> {
 #endif
 
    public:
-    // Forward the arguments to the constructor of IdType
+    /**
+     * Forward the arguments to the constructor of IdType.
+     *
+     * This is done via the model_odm_base class. A std::enable_if is included to disable the
+     * template for the copy constructor case so the default is used.
+     *
+     * @param ts
+     *    The variadic pack of arguments to be forwarded to the constructor of IdType.
+     */
     template <typename... Ts, typename = std::enable_if_t<!FirstTypeIsTheSame<model, Ts...>::value>>
     model(Ts&&... ts) : model_odm_base<IdType>(std::forward<Ts>(ts)...) {
     }
