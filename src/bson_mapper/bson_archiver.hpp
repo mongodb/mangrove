@@ -394,7 +394,7 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
                     key << name << ".";
                 }
                 key << _nextName;
-                _bsonBuilder.key_owned(std::move(key.str()));
+                _bsonBuilder.key_owned(key.str());
             }
 
             // Save the name of this key in case it is the name of an embedded document.
