@@ -383,9 +383,15 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             if (topType == OutputNodeType::InArray) return;
         }
 
-        if (!_nextName && _nodeTypeStack.empty() && isNewNode) {
-            // This is a document at the root node with no name.
-            // Do nothing since no name is expected for non root-element documents in root.
+        if ((!_nextName && _nodeTypeStack.empty() && isNewNode) ||
+                (_nextName && isNewNode)) {
+            // This is a document:
+            //  * at the root node with no name.
+            //    Do nothing since no name is expected for non root-element documents in root.
+            //  * embedded document
+            //    Do nothing since no value expected for this key.
+            //    Example: 
+            //      embedded document "user.profile" but key with value is "user.profile.email"
             return;
         } else if (!_nextName) {
             // Enforce the existence of a name-value pair if this is not a node in root,
