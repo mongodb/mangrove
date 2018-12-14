@@ -387,6 +387,13 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
             // This is a document at the root node with no name.
             // Do nothing since no name is expected for non root-element documents in root.
             return;
+        } else if (_nextName && isNewNode) {
+            // Do nothing since no value expected for this key.
+            // Save key name in _embeddedNameStack for next rounds
+            // Example:
+            //  embedded document "user.profile" but key with value is "user.profile.email"
+            _embeddedNameStack.push_back(_nextName);
+            return;
         } else if (!_nextName) {
             // Enforce the existence of a name-value pair if this is not a node in root,
             // or this in an element in root.
