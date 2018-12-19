@@ -67,7 +67,7 @@ int bson_output_streambuf::insert(int ch) {
     }
 
     // This creates the document from the given bytes, and calls the user-provided callback.
-    if (_bytes_read == _len) {
+    if (_bytes_read == _len && _len > 4) {
         _cb({std::move(_data), _len});
         _bytes_read = 0;
         _len = 0;

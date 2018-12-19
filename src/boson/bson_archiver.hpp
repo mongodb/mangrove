@@ -394,7 +394,8 @@ class BSONOutputArchive : public cereal::OutputArchive<BSONOutputArchive> {
         } else {
             // Set the key of this element to the name stored by the archiver.
             if (!_dotNotationMode || _embeddedNameStack.empty() || _arrayNestingLevel > 0) {
-                _bsonBuilder.key_view(_nextName);
+                if (!isNewNode || !_dotNotationMode)
+                    _bsonBuilder.key_view(_nextName);
             } else {
                 // If we are in dot notation mode and we're not nested in array, build the name of
                 // this key.
