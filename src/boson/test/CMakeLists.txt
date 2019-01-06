@@ -13,7 +13,7 @@
 # limitations under the License.
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/src/third_party/catch/include
+    ${MANGROVE_ROOT_DIR}/src/third_party/catch/include
 )
 
 add_executable(test_boson

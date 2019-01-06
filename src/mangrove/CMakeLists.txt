@@ -46,7 +46,7 @@ add_subdirectory(config)
 
 # auto-generate MANGROVE_CHILD macros for accessing nested fields in the query builder.
 message(STATUS "Generating MANGROVE_CHILD preprocessor macros...")
-execute_process(COMMAND ${CMAKE_SOURCE_DIR}/buildscripts/generate_macros.py ${CMAKE_SOURCE_DIR}/src/mangrove/mangrove_child_autogen.hpp)
+execute_process(COMMAND ${MANGROVE_ROOT_DIR}/buildscripts/generate_macros.py ${MANGROVE_ROOT_DIR}/src/mangrove/mangrove_child_autogen.hpp)
 
 set(mangrove_sources
    "model.cpp"
@@ -58,9 +58,9 @@ include_directories(
     ${LIBMONGOCXX_INCLUDE_DIRS}
     ${LIBBSON_INCLUDE_DIRS}
     ${LIBMONGOC_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_BINARY_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/third_party/cereal/include
+    ${MANGROVE_ROOT_DIR}/src
+    ${MANGROVE_ROOT_BINARY_DIR}/src
+    ${MANGROVE_ROOT_DIR}/src/third_party/cereal/include
 )
 
 link_directories(
