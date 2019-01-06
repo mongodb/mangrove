@@ -57,10 +57,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(GenerateExportHeader)
 include(InstallRequiredSystemLibraries)
 
+set(MANGROVE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+file(RELATIVE_PATH MANGROVE_ROOT_BINARY_DIR ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+set(MANGROVE_ROOT_BINARY_DIR ${CMAKE_BINARY_DIR}/${MANGROVE_ROOT_BINARY_DIR})
+
 # If the user did not customize the install prefix,
 # set it to live under build so we don't inadverently pollute /usr/local
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+    set (CMAKE_INSTALL_PREFIX "${MANGROVE_ROOT_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -71,12 +75,12 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_custom_target(format
-    python ${CMAKE_SOURCE_DIR}/etc/clang_format.py format
+    python ${MANGROVE_ROOT_DIR}/etc/clang_format.py format
     VERBATIM
 )
 
 add_custom_target(format-lint
-    python ${CMAKE_SOURCE_DIR}/etc/clang_format.py lint
+    python ${MANGROVE_ROOT_DIR}/etc/clang_format.py lint
     VERBATIM
 )
 

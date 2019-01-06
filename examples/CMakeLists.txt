@@ -34,12 +34,12 @@ add_custom_target(run-examples DEPENDS examples)
 
 # Run all boson examples on `make run-examples`.
 foreach(EXAMPLE ${BOSON_EXAMPLE_EXECUTABLES})
-    get_filename_component(EXAMPLE_EXECUTABLE "${CMAKE_BINARY_DIR}/examples/boson/${EXAMPLE}" ABSOLUTE)
+    get_filename_component(EXAMPLE_EXECUTABLE "${MANGROVE_ROOT_BINARY_DIR}/examples/boson/${EXAMPLE}" ABSOLUTE)
     add_custom_command(TARGET run-examples POST_BUILD COMMAND ${EXAMPLE_EXECUTABLE})
 endforeach(EXAMPLE)
 
 # Run all mangrove examples on `make run-examples`.
 foreach(EXAMPLE ${MANGROVE_EXAMPLE_EXECUTABLES})
-    get_filename_component(EXAMPLE_EXECUTABLE "${CMAKE_BINARY_DIR}/examples/mangrove/${EXAMPLE}" ABSOLUTE)
+    get_filename_component(EXAMPLE_EXECUTABLE "${MANGROVE_ROOT_BINARY_DIR}/examples/mangrove/${EXAMPLE}" ABSOLUTE)
     add_custom_command(TARGET run-examples POST_BUILD COMMAND ${EXAMPLE_EXECUTABLE})
 endforeach(EXAMPLE)
